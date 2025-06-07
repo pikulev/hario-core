@@ -1,0 +1,117 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "hario-core"
+version = "0.2.0"
+description = "Core interfaces and logic for HAR (HTTP Archive) import and processing"
+authors = [{name = "Vasiliy Pikulev", email = "pikulev.vasiliy@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Internet :: Log Analysis",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit==3.7.1",
+    "pytest==8.2.2",
+    "watchdog==4.0.1",
+    "black==24.3.0",
+    "isort==5.12.0",
+    "flake8==6.0.0",
+    "mypy==1.7.1",
+    "pydocstyle[toml]==6.3.0",
+    "pytest-cov",
+    "mkdocs==1.6.0",
+    "mkdocs-material==9.5.26",
+    "mkdocstrings[python]==0.25.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/pikulev/hario-core"
+"Bug Tracker" = "https://github.com/pikulev/hario-core/issues"
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+include = '\\.pyi?$'
+exclude = '''
+(
+  /(
+      \\.eggs
+    | \\.git
+    | \\.hg
+    | \\.mypy_cache
+    | \\.tox
+    | \\.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+allow_redefinition = false
+show_error_codes = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+mypy_path = "src"
+explicit_package_bases = true
+
+[tool.pydocstyle]
+convention = "google"
+
+[tool.poetry]
+name = "hario-core"
+version = "0.2.0"
+description = "Core interfaces and logic for HAR (HTTP Archive) import and processing"
+authors = ["Vasiliy Pikulev <pikulev.vasiliy@gmail.com>"]
+readme = "README.md"
+packages = [{include = "hario_core", from = "src"}]
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.7.1"
+pytest = "^8.2.2"
+watchdog = "^4.0.1"
+black = "^24.3.0"
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+mypy = "^1.7.1"
+pydocstyle = {version = "^6.3.0", extras = ["toml"]}
+pytest-cov = "^6.1.1"
+mkdocs = "^1.6.0"
+mkdocs-material = "^9.5.26"
+mkdocstrings = {version = "^0.25.1", extras = ["python"]}
+
+[tool.poetry.urls]
+"Homepage" = "https://github.com/v-pikulev/hario"
+"Bug Tracker" = "https://github.com/v-pikulev/hario/issues"

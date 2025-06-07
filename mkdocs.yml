@@ -1,0 +1,47 @@
+site_name: hario-core
+site_description: "Core interfaces and logic for Hario (HAR loader)"
+repo_url: https://github.com/pikulev/hario-core
+repo_name: pikulev/hario-core
+edit_uri: "edit/main/docs/"
+
+theme:
+  name: material
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_root_heading: true
+            show_source: true
+            members_order: source
+            show_category_heading: true
+
+nav:
+  - 'Home': 'index.md'
+  - 'API Reference': 'api.md'
+  - 'Contributing': 'contributing.md'
+  - 'Changelog': 'changelog.md' 
