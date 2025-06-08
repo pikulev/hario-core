@@ -1,4 +1,4 @@
-# Hario-Core: Modern HAR Parsing
+# Hario-Core — Type-safe HAR Model & Transform
 
 [![PyPI version](https://badge.fury.io/py/hario-core.svg)](https://badge.fury.io/py/hario-core)
 [![Build Status](https://github.com/pikulev/hario-core/actions/workflows/python-package.yml/badge.svg)](https://github.com/pikulev/hario-core/actions/workflows/python-package.yml)
