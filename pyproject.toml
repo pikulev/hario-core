@@ -46,7 +46,7 @@ dev = [
     "flake8==6.0.0",
     "mypy==1.7.1",
     "pydocstyle[toml]==6.3.0",
-    "pytest-cov",
+    "pytest-cov==7.8.2",
     "mkdocs==1.6.0",
     "mkdocs-material==9.5.26",
     "mkdocstrings[python]==0.25.1",
