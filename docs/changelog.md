@@ -9,7 +9,7 @@
 - Improved extensibility: custom entry models via `register_entry_model`.
 - Improved type safety and validation throughout the codebase.
 - Docs now explain why normalization and deterministic IDs matter for analytics and deduplication.
-- Requires Python >=3.12.
+- Requires Python >=3.10.
 
 ## v0.2.0
 

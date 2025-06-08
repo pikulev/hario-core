@@ -90,4 +90,4 @@ MIT License. See [LICENSE](LICENSE).
 
 ## Supported Python Versions
 
-- Python 3.12+ 
+- Python 3.10+ 
