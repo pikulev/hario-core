@@ -27,16 +27,16 @@ pip install hario-core
 ```python
 from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
 
-# Parse your HAR file (from path, bytes, or file-like object)
-model = parse("example.har")
-
 # Build a processing pipeline: deterministic ID, normalization, flattening
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
     transformers=[normalize_sizes(), flatten()],
 )
 
+# Parse your HAR file (from path, bytes, or file-like object)
+model = parse("example.har")
 result_dict = pipeline.process(model)
+
 for entry in result_dict:
     print(entry["id"], entry["request"]["url"])
 ```
