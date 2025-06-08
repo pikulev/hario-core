@@ -1,56 +1,60 @@
+from __future__ import annotations
+
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
+from hario_core.models.har_1_2 import Entry, HarLog
 
-class SupportsTimings(Protocol):
-    blocked: Optional[float]
-    dns: Optional[float]
-    connect: Optional[float]
-    send: float
-    wait: float
-    receive: float
-    ssl: Optional[float]
+"""
+Type protocols and interfaces for hario-core.
 
+- Defines Protocols for HAR entries, enrichers, ID generators, and storage repositories.
+- Enables type-safe extensibility and plug-in architecture.
+- Used for static type checking and as contracts for core logic.
+"""
 
-class SupportsRequestResponse(Protocol):
-    headersSize: Optional[int]
-    bodySize: Optional[int]
-
-
-class SupportsRequest(SupportsRequestResponse, Protocol):
-    url: str
-
-
-class HarEntry(Protocol):
-    startedDateTime: str
-    request: SupportsRequest
-    response: SupportsRequestResponse
-    timings: SupportsTimings
-    time: float
-
-    # Pydantic models have this method
-    def model_dump(self) -> Dict[str, Any]: ...
-
-    def model_copy(self: "HarEntry", *, deep: bool = False) -> "HarEntry": ...
+__all__ = [
+    "HarParser",
+    "Processor",
+    "Transformer",
+    "EntryIdFn",
+    "HarStorageRepository",
+]
 
 
-class Enricher(Protocol):
-    """
-    Interface (Protocol) for a component that enriches a HAR entry.
-    It takes the source entry model and modifies the data dictionary in-place.
-    """
+class HarParser(Protocol):
+    """Protocol for a function that parses HAR data from a source."""
 
-    def __call__(self, entry: "HarEntry", data: Dict[str, Any]) -> None: ...
-
-
-class IdGenerator(Protocol):
-    """
-    Interface (Protocol) for a component that generates
-    a unique ID for a HAR entry.
-    """
-
-    def generate_id(self, entry: "HarEntry") -> str:
-        """Generates a unique ID for the given HAR entry."""
+    def __call__(self, src: Any) -> HarLog:
+        """Parses HAR data from a source."""
         ...
+
+
+class Processor(Protocol):
+    """
+    Protocol for a processor that can be called with a
+    source and returns a list of dicts.
+    """
+
+    def process(self, src: Any) -> List[Dict[str, Any]]:
+        """Processes the source and returns a list of dicts."""
+        ...
+
+
+class Transformer(Protocol):
+    """Protocol for a transformer that can be called with a dict."""
+
+    def __call__(self, entry: Entry) -> Dict[str, Any]:
+        """
+        Transforms the dict in-place.
+        User can mutate/add/remove fields as needed.
+        """
+        ...
+
+
+class EntryIdFn(Protocol):
+    """Protocol for a function that generates an ID for a HAR entry."""
+
+    def __call__(self, entry: Entry) -> str: ...
 
 
 class HarStorageRepository(Protocol):
@@ -68,7 +72,7 @@ class HarStorageRepository(Protocol):
         ...
 
     def get_by_id(self, doc_id: str) -> Dict[str, Any]:
-        """Retrie"Retrieves a document by its ID."""
+        """Retrieves a document by its ID."""
         ...
 
     def find_all(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:

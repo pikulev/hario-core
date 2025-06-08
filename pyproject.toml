@@ -4,23 +4,33 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "hario-core"
-version = "0.2.0"
-description = "Core interfaces and logic for HAR (HTTP Archive) import and processing"
+version = "0.3.0"
+description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = [{name = "Vasiliy Pikulev", email = "pikulev.vasiliy@gmail.com"}]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.12"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: Log Analysis",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Typing :: Typed",
+]
+keywords = [
+    "har",
+    "http archive",
+    "pydantic",
+    "parsing",
+    "normalization",
+    "analytics",
+    "pipeline",
+    "transformers",
+    "deterministic id",
+    "devtools",
+    "extensible",
 ]
 dependencies = [
     "pydantic>=2.5.0",
@@ -48,7 +58,7 @@ Homepage = "https://github.com/pikulev/hario-core"
 
 [tool.black]
 line-length = 88
-target-version = ["py38"]
+target-version = ["py312"]
 include = '\\.pyi?$'
 exclude = '''
 (
@@ -92,8 +102,8 @@ convention = "google"
 
 [tool.poetry]
 name = "hario-core"
-version = "0.2.0"
-description = "Core interfaces and logic for HAR (HTTP Archive) import and processing"
+version = "0.3.0"
+description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = ["Vasiliy Pikulev <pikulev.vasiliy@gmail.com>"]
 readme = "README.md"
 packages = [{include = "hario_core", from = "src"}]

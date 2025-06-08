@@ -1,9 +1,10 @@
 """Sample HAR data for testing purposes."""
 
 import json
+from typing import Any, Dict
 
 # A standard, clean HAR 1.2 entry
-CLEAN_HAR = {
+CLEAN_HAR: Dict[str, Any] = {
     "log": {
         "version": "1.2",
         "creator": {"name": "TestHarness", "version": "1.0"},
@@ -40,7 +41,7 @@ CLEAN_HAR = {
 }
 
 # A HAR entry with Chrome DevTools-specific fields (prefixed with _)
-DEVTOOLS_HAR = {
+DEVTOOLS_HAR: Dict[str, Any] = {
     "log": {
         "version": "1.2",
         "creator": {"name": "Chrome", "version": "120.0"},
@@ -74,7 +75,8 @@ DEVTOOLS_HAR = {
                 },
                 "cache": {},
                 "timings": {"send": 5, "wait": 40, "receive": 5},
-            }
+            },
+            CLEAN_HAR["log"]["entries"][0],
         ],
     }
 }

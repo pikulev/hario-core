@@ -1,103 +1,234 @@
-# API Guide
+# API Reference
 
-This page provides a detailed guide to the main functions and extensibility patterns in `hario-core`.
+This page provides a detailed guide to the main functions, classes, and extensibility patterns in `hario-core`.
 
-## Loading HAR Files
+---
 
-The primary entry point is `load_har`, which parses a HAR file and automatically selects the correct Pydantic model for its entries.
+## HAR Parsing
+
+### `parse`
 
 ```python
-from hario_core import load_har
-
-# load_har can handle paths, bytes, or file-like objects
-har_log = load_har("path/to/your/file.har")
-
-# The returned object is a Pydantic model
-print(har_log.creator.name)
+from hario_core import parse
 ```
 
-## Extensibility Patterns
+Parses a HAR file from a path, bytes, or file-like object and returns a validated `HarLog` model. Automatically selects the correct Pydantic model for each entry (including extensions).
 
-`hario-core` is designed to be extended without modifying the core library.
-
-### 1. Adding Support for a New HAR Format
-
-If you need to parse a custom HAR format (e.g., from Safari or a proprietary tool), you can create your own Pydantic model and register it.
-
-**a) Create your custom model and a detector function:**
-
+**Signature:**
 ```python
-# my_safari_extension.py
-from typing import Any, Dict
-from pydantic import Field
+def parse(src: str | Path | bytes | bytearray | IO[Any], *, entry_model_selector: Callable[[dict[str, Any]], type[Entry]] = entry_selector) -> HarLog
+```
+
+- `src`: Path, bytes, or file-like object containing HAR JSON.
+- `entry_model_selector`: Optional. Function to select the Pydantic model for each entry (default: registry-based selector).
+
+**Returns:**
+- `HarLog` — a validated Pydantic model with `.entries` (list of `Entry` or extension models).
+
+**Example:**
+```python
+har_log = parse("example.har")
+for entry in har_log.entries:
+    print(entry.request.url)
+```
+
+---
+
+## Entry Model Registration
+
+### `register_entry_model`
+
+Register a custom Pydantic model and detector function for new HAR entry formats (e.g., Safari, proprietary extensions).
+
+**Signature:**
+```python
+def register_entry_model(detector: Callable[[dict[str, Any]], bool], model: type[Entry]) -> None
+```
+
+- `detector`: Function that takes an entry dict and returns True if the model should be used.
+- `model`: Pydantic model class to use for matching entries.
+
+**Example:**
+```python
 from hario_core.models.har_1_2 import Entry
+from pydantic import Field
 
 class SafariEntry(Entry):
-    """A Pydantic model for Safari HAR entries."""
-    webkit_trace: Dict[str, Any] = Field(alias="_webkitTrace")
+    webkit_trace: dict = Field(alias="_webkitTrace")
 
-def is_safari_entry(entry_json: Dict[str, Any]) -> bool:
-    """Detects if a HAR entry is from Safari."""
+def is_safari_entry(entry_json):
     return "_webkitTrace" in entry_json
+
+register_entry_model(is_safari_entry, SafariEntry)
 ```
 
-**b) Register your model in your application's startup code:**
+---
+
+## Data Models
+
+All core data structures are implemented as Pydantic models in `hario_core.models.har_1_2`.
+
+- `Entry`: Pydantic model for a HAR entry (fields: request, response, timings, cache, etc.).
+- `HarLog`: Pydantic model for the HAR log (fields: version, creator, entries, etc.).
+
+**Example:**
+```python
+from hario_core.models.har_1_2 import HarLog, Entry
+
+har_log = HarLog.model_validate(har_json["log"])
+for entry in har_log.entries:
+    assert isinstance(entry, Entry)
+    print(entry.request.url)
+```
+
+### `Transformer`
+A transformer is a function that takes an `Entry` (or its extension) and returns a dict (possibly mutated/transformed).
 
 ```python
-from hario_core import register_entry_model, load_har
-from my_safari_extension import SafariEntry, is_safari_entry
-
-# Register your extension
-register_entry_model(detector=is_safari_entry, model=SafariEntry)
-
-# Now, load_har will automatically use SafariEntry for matching files
-har_log = load_har("my_safari.har")
+def my_transformer(entry: Entry) -> dict:
+    data = entry.model_dump()
+    # mutate data
+    return data
 ```
 
-### 2. Custom Data Enrichment
+### `EntryIdFn`
+A function that takes an `Entry` and returns a string ID.
 
-The `apply_enrichment` function allows you to apply a pipeline of custom functions to enrich your data. An "enricher" is any callable that takes an `HarEntry` model and a data dictionary.
+---
+
+## ID Generation
+
+### `by_field`
+
+Returns a deterministic ID function based on specified fields of a HAR entry.
+
+**Signature:**
+```python
+from hario_core.utils import by_field
+id_fn = by_field(["request.url", "startedDateTime"])
+```
+
+### `uuid`
+
+Returns a function that generates a random UUID for each entry.
+
+**Signature:**
+```python
+from hario_core.utils import uuid
+id_fn = uuid()
+```
+
+---
+
+## Transformers
+
+Transformers are functions that mutate or normalize HAR entry data for storage or analysis.
+
+### `flatten`
+
+Flattens nested structures in a HAR entry to a single level, stringifying deep or large fields (useful for DB storage).
+
+**Signature:**
+```python
+from hario_core.utils import flatten
+transform = flatten(max_depth=3, size_limit=32000)
+```
+- `max_depth`: Maximum depth to keep as dicts/lists (default: 3).
+- `size_limit`: Maximum size (in bytes) for nested data before stringifying (default: 32,000).
+
+**Example:**
+```python
+flat_entry = flatten()(entry)
+```
+
+### `normalize_sizes`
+
+Normalizes negative size fields in request/response to zero.
+
+**Signature:**
+```python
+from hario_core.utils import normalize_sizes
+transform = normalize_sizes()
+```
+
+### `normalize_timings`
+
+Normalizes negative timing fields in entry.timings to zero.
+
+**Signature:**
+```python
+from hario_core.utils import normalize_timings
+transform = normalize_timings()
+```
+
+---
+
+## Pipeline
+
+### `Pipeline`
+
+A high-level class for processing HAR data: transforming and assigning IDs. You must pass a parsed `HarLog` object (see `parse`).
+
+**Signature:**
+```python
+from hario_core import Pipeline, by_field, flatten, parse
+
+pipeline = Pipeline(
+    id_fn=by_field(["request.url", "startedDateTime"]),
+    id_field="entry_id",  # optional, default is "id"
+    transformers=[flatten()],  # optional
+)
+
+har_log = parse("example.har")
+results = pipeline.process(har_log)
+for entry in results:
+    print(entry["entry_id"], entry["request"]["url"])
+```
+
+- `id_fn`: Function to generate an ID for each entry.
+- `id_field`: Field name for the generated ID (default: "id").
+- `transformers`: List of transformer functions to apply to each entry.
+
+---
+
+## Example: Full Pipeline
 
 ```python
-from typing import Any, Dict
-from hario_core import load_har, apply_enrichment
-from hario_core.interfaces import HarEntry
+from hario_core import Pipeline, by_field, flatten, normalize_sizes, parse
 
-# Example: an enricher to extract User-Agent details
-def user_agent_enricher(entry: HarEntry, data: Dict[str, Any]) -> None:
-    """Parses the User-Agent header and adds it to the data."""
-    for header in entry.request.headers:
-        if header.name.lower() == "user-agent":
-            # (A real implementation would parse this more thoroughly)
-            data["user_agent_details"] = {"raw": header.value}
-            break
+pipeline = Pipeline(
+    id_fn=by_field(["request.url", "startedDateTime"]),
+    transformers=[flatten(), normalize_sizes()],
+)
 
-har_log = load_har("my.har")
-first_entry = har_log.entries[0]
+har_log = parse("example.har")
+results = pipeline.process(har_log)
 
-# Apply your custom enricher
-enriched_data = apply_enrichment(first_entry, enrichers=[user_agent_enricher])
-
-# The result is a dictionary ready for storage or further analysis
-print(enriched_data.get("user_agent_details"))
+for entry in results:
+    print(entry["id"], entry["request"]["url"])
 ```
 
-## Har Parser
+---
 
-::: hario_core.har_parser
+## Chrome DevTools Extension Example
 
-## Models
+You can use the Chrome DevTools HAR extension models to validate and work with HAR files that include Chrome-specific fields.
 
-::: hario_core.models
+**Example:**
+```python
+from hario_core.models.extensions.chrome_devtools import DevToolsEntry
+from hario_core.models.har_1_2 import HarLog
 
-## Logic
+# Suppose har_json is a dict loaded from a Chrome DevTools HAR file
+har_log = HarLog.model_validate(har_json["log"])
+for entry in har_log.entries:
+    devtools_entry = DevToolsEntry.model_validate(entry.model_dump())
+    print(devtools_entry.resourceType, devtools_entry.request.url)
+```
 
-::: hario_core.logic
+---
 
-## Interfaces
-
-::: hario_core.interfaces
-
-## ID Generators
-
-::: hario_core.id_generators 
+## See Also
+- [Quickstart](index.md)
+- [Contributing](contributing.md)
+- [Changelog](changelog.md) 

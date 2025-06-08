@@ -1,4 +1,10 @@
-"""Helper functions for reading & validating HAR files."""
+"""
+Core logic for reading, validating, and extending HAR (HTTP Archive) files.
+
+- Provides the main entry point for loading and validating HAR files (`load_har`).
+- Supports extensibility via registration of custom entry models and detectors.
+- Handles both standard HAR and Chrome DevTools extensions out of the box.
+"""
 
 import json
 from pathlib import Path
@@ -69,7 +75,7 @@ def _read_json(src: JsonSource) -> dict[str, Any]:
     return cast(dict[str, Any], json.load(src))
 
 
-def load_har(
+def parse(
     src: JsonSource,
     *,
     entry_model_selector: Callable[[dict[str, Any]], type[Entry]] = entry_selector,
@@ -81,10 +87,12 @@ def load_har(
 
     Raises `ValueError` if the JSON is invalid HAR.
     """
-    data = _read_json(src)
     try:
+        data = _read_json(src)
+        if not isinstance(data, dict):
+            raise ValueError("Invalid HAR file: root element must be a JSON object")
         log_data = data["log"]
-        raw_entries = log_data.get("entries", [])
+        raw_entries = log_data["entries"]
 
         # Validate entries one by one using the selector
         validated_entries = [
@@ -96,5 +104,5 @@ def load_har(
 
         # Validate the entire HarLog object at once
         return HarLog.model_validate(log_data)
-    except (KeyError, ValidationError) as exc:
+    except (KeyError, ValidationError, json.JSONDecodeError) as exc:
         raise ValueError("Invalid HAR file") from exc

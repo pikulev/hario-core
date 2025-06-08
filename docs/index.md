@@ -1,33 +1,67 @@
-# Welcome to Hario-Core
+# Quickstart
 
-A modern, extensible, and type-safe library for parsing and processing HAR (HTTP Archive) files. Built with Pydantic, `hario-core` provides a robust foundation for working with HAR data, including built-in support for Chrome DevTools extensions and a powerful mechanism for adding your own extensions.
+```python
+from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
 
-## Why Hario-Core?
+# Parse your HAR file (from path, bytes, or file-like object)
+har_log = parse("example.har")
 
--   **Type-Safe**: Leverages Pydantic for robust data validation and a great developer experience.
--   **Extensible by Design**: Easily add support for custom HAR formats (e.g., Safari, Firefox) using a simple registration pattern.
--   **Flexible Enrichment**: Add custom data to your HAR entries using a pluggable enricher pipeline.
--   **Protocol-Based**: Core logic is built on abstract protocols, allowing you to easily integrate `hario-core` into your own tools.
+# Build a processing pipeline: deterministic ID, normalization, flattening
+pipeline = Pipeline(
+    id_fn=by_field(["request.url", "startedDateTime"]),
+    transformers=[normalize_sizes(), flatten()],
+)
 
-## Getting Started
+results = pipeline.process(har_log)
+for entry in results:
+    print(entry["id"], entry["request"]["url"])
+```
 
-To get started, install the library from PyPI:
+---
+
+# Hario Core
+
+Hario Core is a modern, extensible, and type-safe Python library for parsing, transforming, and analyzing HAR (HTTP Archive) files. Built on Pydantic, it provides robust validation, flexible transformation, and easy extension for custom HAR formats.
+
+## Key Features
+
+- **Type-Safe Parsing**: Validates HAR files using Pydantic models, catching errors early.
+- **Transformers**: Apply built-in or custom transformations to each HAR entry (e.g., flattening, normalization).
+- **Normalization**: Ensures all numeric fields (sizes, timings) are non-negative, so you can safely sum, aggregate, and analyze data without errors from negative values. This is crucial for analytics and reporting.
+- **Deterministic & Random IDs**: Generate unique or deterministic IDs for each entry. Deterministic IDs ensure that the same request always gets the same ID—useful for deduplication, comparison, and building analytics pipelines.
+- **Extensible**: Register your own entry models to support browser-specific or proprietary HAR extensions (e.g., Chrome DevTools, Safari).
+- **Composable Pipelines**: Chain any number of transformers and ID strategies for flexible data processing.
+
+## Why Normalize HAR Data?
+
+HAR files from browsers or proxies sometimes contain negative values for sizes or timings (e.g., -1 for unknown). Normalization transforms these to zero, so you can safely compute totals, averages, and other metrics without skewing your analytics. This is especially important for dashboards, BI, and automated reporting.
+
+## Why Deterministic IDs?
+
+A deterministic ID is generated from key fields (like URL and timestamp), so the same logical request always gets the same ID—even if the HAR is re-exported or merged. This is essential for deduplication, change tracking, and building reliable analytics or data warehouses.
+
+## Example: Full Pipeline
+
+```python
+from hario_core import parse, Pipeline, by_field, flatten, normalize_sizes
+
+har_log = parse("example.har")
+pipeline = Pipeline(
+    id_fn=by_field(["request.url", "startedDateTime"]),
+    transformers=[flatten(), normalize_sizes()],
+)
+results = pipeline.process(har_log)
+
+for entry in results:
+    print(entry["id"], entry["request"]["url"])
+```
+
+## Installation
 
 ```bash
 pip install hario-core
 ```
 
-Then, you can start parsing your HAR files:
+---
 
-```python
-from hario_core import load_har
-
-# Load a HAR file from a path
-har_log = load_har("path/to/your/file.har")
-
-# Access validated data
-for entry in har_log.entries:
-    print(f"{entry.request.method} {entry.request.url} -> {entry.response.status}")
-```
-
-For more advanced use cases, check out the **API Guide**. 
+See the [API Reference](api.md) for more details and advanced usage. 

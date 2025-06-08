@@ -5,6 +5,7 @@ Only a subset of rarely‑used fields are omitted for brevity;
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class Header(BaseModel):
     name: str
     value: str
+    comment: Optional[str] = None
 
 
 class Cookie(BaseModel):
@@ -24,45 +26,61 @@ class Cookie(BaseModel):
     httpOnly: Optional[bool] = None
     secure: Optional[bool] = None
     sameSite: Optional[str] = Field(None, alias="sameSite")
+    comment: Optional[str] = None
 
 
 class QueryString(Header):
     pass
 
 
-class PostParam(Header):
-    pass
+class PostParam(BaseModel):
+    name: str
+    value: str
+    fileName: Optional[str] = None
+    contentType: Optional[str] = None
+    comment: Optional[str] = None
+
+
+class PostData(BaseModel):
+    mimeType: str
+    params: List[PostParam]
+    text: str
+    comment: Optional[str] = None
 
 
 class Content(BaseModel):
     size: int
-    mimeType: str = Field("application/octet-stream", alias="mimeType")
+    compression: Optional[int] = None
+    mimeType: str
     text: Optional[str] = None
     encoding: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class Request(BaseModel):
     method: str
     url: str
-    httpVersion: Optional[str] = Field(None, alias="httpVersion")
-    headers: List[Header] = []
-    queryString: List[QueryString] = []
-    cookies: List[Cookie] = []
-    headersSize: int | None = Field(None, alias="headersSize")
-    bodySize: int | None = Field(None, alias="bodySize")
-    postData: Optional[Dict[str, Any]] = Field(None, alias="postData")
+    httpVersion: str
+    headers: List[Header]
+    queryString: List[QueryString]
+    cookies: List[Cookie]
+    headersSize: int
+    bodySize: int
+    postData: Optional[PostData] = Field(default=None)
+    comment: Optional[str] = None
 
 
 class Response(BaseModel):
     status: int
-    statusText: str = Field("", alias="statusText")
-    httpVersion: Optional[str] = Field(None, alias="httpVersion")
-    headers: List[Header] = []
-    cookies: List[Cookie] = []
+    statusText: str
+    httpVersion: str
+    headers: List[Header]
+    cookies: List[Cookie]
     content: Content
-    redirectURL: str = Field("", alias="redirectURL")
-    headersSize: int | None = Field(None, alias="headersSize")
-    bodySize: int | None = Field(None, alias="bodySize")
+    redirectURL: str
+    headersSize: int
+    bodySize: int
+    comment: Optional[str] = None
 
 
 class Timings(BaseModel):
@@ -73,18 +91,26 @@ class Timings(BaseModel):
     wait: float
     receive: float
     ssl: Optional[float] = None
+    comment: Optional[str] = None
 
 
 class Entry(BaseModel):
-    startedDateTime: str
+    """HAR Entry object."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+    pageref: Optional[str] = None
+    startedDateTime: datetime
     time: float
     request: Request
     response: Response
     cache: Dict[str, Any]
     timings: Timings
-    serverIPAddress: Optional[str] = Field(None, alias="serverIPAddress")
+    serverIPAddress: Optional[str] = None
     connection: Optional[str] = None
-    pageref: Optional[str] = None
+    comment: Optional[str] = None
 
 
 class Creator(BaseModel):
@@ -102,14 +128,14 @@ class PageTimings(BaseModel):
 
 
 class Page(BaseModel):
-    startedDateTime: str
+    startedDateTime: datetime
     id: str
     title: str
     pageTimings: PageTimings
 
 
 class HarLog(BaseModel):
-    model_config = ConfigDict(extra="allow")  # keep vendor‑specific fields
+    model_config = ConfigDict(extra="forbid")  # strict: forbid vendor‑specific fields
 
     version: str
     creator: Creator
