@@ -1,27 +1,15 @@
-# Quickstart
-
-```python
-from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
-
-# Parse your HAR file (from path, bytes, or file-like object)
-har_log = parse("example.har")
-
-# Build a processing pipeline: deterministic ID, normalization, flattening
-pipeline = Pipeline(
-    id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[normalize_sizes(), flatten()],
-)
-
-results = pipeline.process(har_log)
-for entry in results:
-    print(entry["id"], entry["request"]["url"])
-```
-
----
-
 # Hario Core
 
 Hario Core is a modern, extensible, and type-safe Python library for parsing, transforming, and analyzing HAR (HTTP Archive) files. Built on Pydantic, it provides robust validation, flexible transformation, and easy extension for custom HAR formats.
+
+## Main Concepts
+
+- **Parser**: Use `parse()` to load and validate HAR files into Pydantic models (`HarLog`, `Entry`).
+- **Pipeline**: The `Pipeline` class lets you process HAR logs, assign IDs, and apply transformations in a composable way.
+- **Transformers**: Built-in and custom functions (like `flatten`, `normalize_sizes`, `normalize_timings`) to mutate or normalize HAR entries for storage or analytics.
+- **Utils**: Utilities for ID generation (`by_field`, `uuid`), model registration (`register_entry_model`), and more.
+
+See the [API Reference](api.md) for detailed usage, signatures, and extension patterns.
 
 ## Key Features
 
