@@ -16,7 +16,11 @@ Parses a HAR file from a path, bytes, or file-like object and returns a validate
 
 **Signature:**
 ```python
-def parse(src: str | Path | bytes | bytearray | IO[Any], *, entry_model_selector: Callable[[dict[str, Any]], type[Entry]] = entry_selector) -> HarLog
+def parse(
+    src: str | Path | bytes | bytearray | IO[Any],
+    *,
+    entry_model_selector: Callable[[dict[str, Any]], type[Entry]] = entry_selector,
+) -> HarLog
 ```
 
 - `src`: Path, bytes, or file-like object containing HAR JSON.
@@ -42,7 +46,10 @@ Register a custom Pydantic model and detector function for new HAR entry formats
 
 **Signature:**
 ```python
-def register_entry_model(detector: Callable[[dict[str, Any]], bool], model: type[Entry]) -> None
+def register_entry_model(
+    detector: Callable[[dict[str, Any]], bool],
+    model: type[Entry],
+) -> None
 ```
 
 - `detector`: Function that takes an entry dict and returns True if the model should be used.
@@ -104,6 +111,11 @@ Returns a deterministic ID function based on specified fields of a HAR entry.
 
 **Signature:**
 ```python
+def by_field(fields: list[str]) -> EntryIdFn
+```
+
+**Example:**
+```python
 from hario_core.utils import by_field
 id_fn = by_field(["request.url", "startedDateTime"])
 ```
@@ -113,6 +125,11 @@ id_fn = by_field(["request.url", "startedDateTime"])
 Returns a function that generates a random UUID for each entry.
 
 **Signature:**
+```python
+def uuid() -> EntryIdFn
+```
+
+**Example:**
 ```python
 from hario_core.utils import uuid
 id_fn = uuid()
@@ -130,8 +147,10 @@ Flattens nested structures in a HAR entry to a single level, stringifying deep o
 
 **Signature:**
 ```python
-from hario_core.utils import flatten
-transform = flatten(max_depth=3, size_limit=32000)
+def flatten(
+    max_depth: int = 3,
+    size_limit: int = 32_000,
+) -> Transformer
 ```
 - `max_depth`: Maximum depth to keep as dicts/lists (default: 3).
 - `size_limit`: Maximum size (in bytes) for nested data before stringifying (default: 32,000).
@@ -147,8 +166,7 @@ Normalizes negative size fields in request/response to zero.
 
 **Signature:**
 ```python
-from hario_core.utils import normalize_sizes
-transform = normalize_sizes()
+def normalize_sizes() -> Transformer
 ```
 
 ### `normalize_timings`
@@ -157,8 +175,7 @@ Normalizes negative timing fields in entry.timings to zero.
 
 **Signature:**
 ```python
-from hario_core.utils import normalize_timings
-transform = normalize_timings()
+def normalize_timings() -> Transformer
 ```
 
 ---
@@ -171,18 +188,14 @@ A high-level class for processing HAR data: transforming and assigning IDs. You 
 
 **Signature:**
 ```python
-from hario_core import Pipeline, by_field, flatten, parse
-
-pipeline = Pipeline(
-    id_fn=by_field(["request.url", "startedDateTime"]),
-    id_field="entry_id",  # optional, default is "id"
-    transformers=[flatten()],  # optional
-)
-
-har_log = parse("example.har")
-results = pipeline.process(har_log)
-for entry in results:
-    print(entry["entry_id"], entry["request"]["url"])
+class Pipeline:
+    def __init__(
+        self,
+        id_fn: EntryIdFn,
+        id_field: str = "id",
+        transformers: Sequence[Transformer] = (),
+    ) -> None
+    def process(self, har_log: HarLog) -> list[dict[str, Any]]
 ```
 
 - `id_fn`: Function to generate an ID for each entry.
