@@ -33,14 +33,14 @@ A deterministic ID is generated from key fields (like URL and timestamp), so the
 ```python
 from hario_core import parse, Pipeline, by_field, flatten, normalize_sizes
 
-har_log = parse("example.har")
+model = parse("example.har")
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
     transformers=[flatten(), normalize_sizes()],
 )
-results = pipeline.process(har_log)
+result_dict = pipeline.process(model)
 
-for entry in results:
+for entry in result_dict:
     print(entry["id"], entry["request"]["url"])
 ```
 

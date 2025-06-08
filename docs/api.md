@@ -31,7 +31,7 @@ def parse(
 
 **Example:**
 ```python
-har_log = parse("example.har")
+model = parse("example.har")
 for entry in har_log.entries:
     print(entry.request.url)
 ```
@@ -214,10 +214,10 @@ pipeline = Pipeline(
     transformers=[flatten(), normalize_sizes()],
 )
 
-har_log = parse("example.har")
-results = pipeline.process(har_log)
+model = parse("example.har")
+result_dict = pipeline.process(model)
 
-for entry in results:
+for entry in result_dict:
     print(entry["id"], entry["request"]["url"])
 ```
 

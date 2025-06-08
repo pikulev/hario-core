@@ -28,7 +28,7 @@ pip install hario-core
 from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
 
 # Parse your HAR file (from path, bytes, or file-like object)
-har_log = parse("example.har")
+model = parse("example.har")
 
 # Build a processing pipeline: deterministic ID, normalization, flattening
 pipeline = Pipeline(
@@ -36,8 +36,8 @@ pipeline = Pipeline(
     transformers=[normalize_sizes(), flatten()],
 )
 
-results = pipeline.process(har_log)
-for entry in results:
+result_dict = pipeline.process(model)
+for entry in result_dict:
     print(entry["id"], entry["request"]["url"])
 ```
 
