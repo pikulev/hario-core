@@ -1,0 +1,26 @@
+name: hario-core
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pydantic>=2.5.0
+  # dev-dependencies
+  - pytest=8.2.2
+  - pytest-cov
+  - pre-commit=3.7.1
+  - watchdog=4.0.1
+  - black=24.3.0
+  - isort=5.12.0
+  - flake8=6.0.0
+  - mypy=1.7.1
+  - pydocstyle=6.3.0
+  - mkdocs=1.6.0
+  - mkdocs-material=9.5.26
+  - mkdocstrings=0.25.1
+  - mkdocs-autorefs=0.5.0
+  - poetry
+  - pip:
+      - mkdocstrings[python]==0.25.1
+      - pydocstyle[toml]==6.3.0

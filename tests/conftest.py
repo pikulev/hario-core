@@ -1,33 +1,49 @@
 """Pytest fixtures for HARP."""
 
-from typing import Any
+from typing import Any, Dict, cast
 
 import pytest
 
 from hario_core.models.har_1_2 import Entry, HarLog
 
-from .samples import CLEAN_HAR
+from .samples import CHROME_DEVTOOLS_HAR, CLEANED_HAR
 
 
 @pytest.fixture
-def har_log() -> HarLog:
-    return HarLog.model_validate(CLEAN_HAR["log"])
+def chrome_devtools_har() -> Dict[str, Any]:
+    return CHROME_DEVTOOLS_HAR
 
 
 @pytest.fixture
-def har_entry() -> Entry:
-    return Entry.model_validate(CLEAN_HAR["log"]["entries"][0])
+def cleaned_har() -> Dict[str, Any]:
+    return CLEANED_HAR
 
 
-class TestEntryMixin:
-    @staticmethod
-    def make_entry(data: dict[str, Any]) -> Entry:
-        return Entry.model_validate(data)
+@pytest.fixture
+def chrome_devtools_entry() -> Dict[str, Any]:
+    return cast(Dict[str, Any], CHROME_DEVTOOLS_HAR["log"]["entries"][0])
 
-    @staticmethod
-    def base_dict() -> dict[str, Any]:
-        from copy import deepcopy
 
-        from .samples import CLEAN_HAR
+@pytest.fixture
+def cleaned_entry() -> Dict[str, Any]:
+    return cast(Dict[str, Any], CLEANED_HAR["log"]["entries"][0])
 
-        return deepcopy(CLEAN_HAR["log"]["entries"][0])
+
+@pytest.fixture
+def chrome_devtools_entry_model() -> Entry:
+    return Entry.model_validate(CHROME_DEVTOOLS_HAR["log"]["entries"][0])
+
+
+@pytest.fixture
+def cleaned_entry_model() -> Entry:
+    return Entry.model_validate(CLEANED_HAR["log"]["entries"][0])
+
+
+@pytest.fixture
+def chrome_devtools_log() -> HarLog:
+    return HarLog.model_validate(CHROME_DEVTOOLS_HAR["log"])
+
+
+@pytest.fixture
+def cleaned_log() -> HarLog:
+    return HarLog.model_validate(CLEANED_HAR["log"])

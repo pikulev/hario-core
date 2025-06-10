@@ -28,6 +28,32 @@ HAR files from browsers or proxies sometimes contain negative values for sizes o
 
 A deterministic ID is generated from key fields (like URL and timestamp), so the same logical request always gets the same ID—even if the HAR is re-exported or merged. This is essential for deduplication, change tracking, and building reliable analytics or data warehouses.
 
+## Extensibility and DevTools Support
+
+Modern HAR files exported from browsers (e.g., Chrome DevTools) often contain additional, non-standard fields such as `_initiator`, `_resourceType`, `_transferSize`, and more. These fields are used for advanced diagnostics and analysis.
+
+### Where do extensions appear?
+
+- **Almost all extensions are found only in `entries`** (and their submodels: request, response, timings, etc.).
+- Extensions at the root `log` level, or in `pages`, `creator`, `browser`, etc., are extremely rare and not typically used for traffic analysis.
+
+### Why are extensions implemented only at the entry level?
+
+- In hario-core, extensions are supported via a separate `DevToolsEntry` model, which inherits from the standard `Entry` and adds all known DevTools-specific fields.
+- The `entry_selector` function inspects each entry and chooses the appropriate model (`Entry` or `DevToolsEntry`).
+- This approach covers 99% of real-world cases and allows you to work with any HAR file exported from browsers.
+
+### How it works
+
+```python
+from hario_core.har_parser import parse
+
+har_log = parse(devtools_har_bytes)
+entry = har_log.entries[0]
+assert isinstance(entry, Entry)
+assert isinstance(entry, DevToolsEntry)  # True for DevTools entries
+```
+
 ## Example: Full Pipeline
 
 ```python
