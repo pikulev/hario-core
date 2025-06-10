@@ -43,7 +43,7 @@ class PostParam(BaseModel):
 
 class PostData(BaseModel):
     mimeType: str
-    params: List[PostParam]
+    params: Optional[List[PostParam]] = None
     text: str
     comment: Optional[str] = None
 

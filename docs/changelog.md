@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.3.1
+- FIX real-world HAR compatibility: made nested fields like `postData.params` optional in models, so parsing DevTools and other real HAR files is more robust.
+- All test samples are now based on real HAR data with valid `pages` and `pageref` links.
+- Documentation and comments are now only in English.
+- Added section on extensibility and DevTools support to the docs.
+- Minor fixes for mypy/flake8 compatibility and test infrastructure.
+
 ## v0.3.0
 
 - BREAKING: Pipeline now only accepts HarLog objects (parsed HAR), does not parse sources itself.
@@ -19,6 +26,6 @@
 -   **Model Separation**: HAR 1.2 models are now separated from DevTools extension models.
 -   **Removed pandas**: Removed the `to_dataframe` method and the `pandas` dependency to keep the core library lightweight.
 
-## Version 0.1.0
+## v0.1.0
 
-- Initial release of `hario-core`. 
+- Initial release of `hario-core`.
