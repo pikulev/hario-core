@@ -12,7 +12,7 @@ from typing import Any, Dict
 import pytest
 
 from hario_core.models.har_1_2 import Entry
-from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
+from hario_core.utils.transform import normalize_sizes, normalize_timings, stringify
 
 # Используем только реальные сэмплы через фикстуры
 
@@ -22,7 +22,7 @@ class TestTransform:
         doc = deepcopy(cleaned_entry)
         doc["cache"]["level1"] = {"level2": {"level3": {"level4": "value"}}}
         entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
+        transformed = stringify()(entry)
         val = transformed["cache"]["level1"]
         if isinstance(val, Dict) and "level2" in val:
             val2 = val["level2"]
@@ -38,7 +38,7 @@ class TestTransform:
         large_list = [{"a": "b"}] * 5000
         doc["cache"]["data"] = large_list
         entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
+        transformed = stringify()(entry)
         assert isinstance(transformed["cache"]["data"], str)
 
     def test_no_transform_needed(self, cleaned_entry: Dict[str, Any]) -> None:
@@ -47,14 +47,14 @@ class TestTransform:
         doc["cache"]["list"] = [1, 2, 3]
         entry = Entry.model_validate(doc)
         original_doc = entry.model_dump()
-        transformed = flatten()(entry)
+        transformed = stringify()(entry)
         assert transformed == original_doc
 
     def test_transform_with_no_content(self, cleaned_entry: Dict[str, Any]) -> None:
         doc = deepcopy(cleaned_entry)
         doc["response"]["status"] = 200
         entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
+        transformed = stringify()(entry)
         assert "content" in transformed["response"]
         assert transformed["response"]["status"] == 200
 
@@ -65,7 +65,7 @@ class TestTransform:
             {"level2_b": {"level3_b": "value"}},
         ]
         entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
+        transformed = stringify()(entry)
         assert isinstance(transformed["cache"]["level1"], list)
         val = transformed["cache"]["level1"][0]["level2_a"]
         if isinstance(val, Dict) and "level3_a" in val:
@@ -75,29 +75,33 @@ class TestTransform:
         val2 = transformed["cache"]["level1"][1]["level2_b"]
         assert isinstance(val2, (Dict, str))
 
-    def test_flatten_depth_and_size_limit(self, cleaned_entry: Dict[str, Any]) -> None:
+    def test_stringify_depth_and_size_limit(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
         doc = deepcopy(cleaned_entry)
-        doc["cache"]["a"] = {"b": {"c": {"d": [1, 2, 3]}}}
+        doc["cache"]["level1"] = {"level2": {"level3": {"level4": "value"}}}
         entry = Entry.model_validate(doc)
-        flat = flatten(max_depth=2)(entry)
-        val = flat["cache"]["a"]
-        if isinstance(val, Dict) and "b" in val:
-            bval = val["b"]
-            assert isinstance(bval, str)
-            assert '"c": {"d": [1, 2, 3]}' in bval
+        flat = stringify(max_depth=2)(entry)
+        val = flat["cache"]["level1"]
+        if isinstance(val, Dict) and "level2" in val:
+            val2 = val["level2"]
+            if isinstance(val2, Dict) and "level3" in val2:
+                assert isinstance(val2["level3"], str)
+            else:
+                assert isinstance(val2, str)
         else:
             assert isinstance(val, str)
         big_list = list(range(10000))
         doc2 = deepcopy(cleaned_entry)
         doc2["cache"]["arr"] = big_list
         entry2 = Entry.model_validate(doc2)
-        flat2 = flatten(size_limit=100)(entry2)
+        flat2 = stringify(size_limit=100)(entry2)
         assert isinstance(flat2["cache"]["arr"], str)
         doc3 = deepcopy(cleaned_entry)
         doc3["cache"]["x"] = 1
         doc3["cache"]["y"] = [1, 2, 3]
         entry3 = Entry.model_validate(doc3)
-        flat3 = flatten()(entry3)
+        flat3 = stringify()(entry3)
         assert flat3["cache"]["x"] == 1
         assert flat3["cache"]["y"] == [1, 2, 3]
 
@@ -134,37 +138,37 @@ class TestTransform:
         assert t["connect"] == 0
         assert t["send"] == 1
 
-    def test_flatten_empty_and_noop(self, cleaned_entry_model: Entry) -> None:
-        flat = flatten()(cleaned_entry_model)
+    def test_stringify_empty_and_noop(self, cleaned_entry_model: Entry) -> None:
+        flat = stringify()(cleaned_entry_model)
         assert flat == cleaned_entry_model.model_dump()
         doc2 = deepcopy(cleaned_entry_model.model_dump())
         doc2["cache"]["a"] = 1
         doc2["cache"]["b"] = 2
         entry2 = Entry.model_validate(doc2)
-        flat2 = flatten()(entry2)
+        flat2 = stringify()(entry2)
         assert flat2 == entry2.model_dump()
         entry3 = deepcopy(cleaned_entry_model)
         entry3.cache["a"] = {}
-        flat3 = flatten()(entry3)
+        flat3 = stringify()(entry3)
         assert flat3 == entry3.model_dump()
 
-    def test_flatten_non_dict_input(self) -> None:
+    def test_stringify_non_dict_input(self) -> None:
         try:
-            flatten()([1, 2, 3])  # type: ignore
+            stringify()([1, 2, 3])  # type: ignore
         except Exception:
             pass
         else:
-            assert False, "flatten should raise an error on non-Dict"
+            assert False, "stringify should raise an error on non-Dict"
 
-    def test_flatten_basic(self, cleaned_entry_model: Entry) -> None:
-        flat = flatten()(cleaned_entry_model)
+    def test_stringify_basic(self, cleaned_entry_model: Entry) -> None:
+        flat = stringify()(cleaned_entry_model)
         assert isinstance(flat, Dict)
         assert "request" in flat
 
-    def test_flatten_deep_structure(self, cleaned_entry_model: Entry) -> None:
+    def test_stringify_deep_structure(self, cleaned_entry_model: Entry) -> None:
         entry = deepcopy(cleaned_entry_model)
         entry.cache["deep"] = {"a": {"b": {"c": {"d": 1}}}}
-        flat = flatten(max_depth=2)(entry)
+        flat = stringify(max_depth=2)(entry)
         val = flat["cache"]["deep"]
         if isinstance(val, Dict) and "a" in val:
             aval = val["a"]

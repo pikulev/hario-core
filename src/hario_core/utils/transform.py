@@ -9,7 +9,7 @@ from typing import Any, Dict, Protocol
 from hario_core.models.har_1_2 import Entry
 
 __all__ = [
-    "flatten",
+    "stringify",
     "normalize_sizes",
     "normalize_timings",
 ]
@@ -19,7 +19,7 @@ class Transformer(Protocol):
     def __call__(self, entry: Entry) -> Dict[str, Any]: ...
 
 
-def flatten(max_depth: int = 3, size_limit: int = 32_000) -> Transformer:
+def stringify(max_depth: int = 3, size_limit: int = 32_000) -> Transformer:
     """
     Flattens the HAR data into a single level.
     This is useful for storing HAR data in a database.

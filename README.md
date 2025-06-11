@@ -10,7 +10,7 @@ A modern, extensible, and type-safe Python library for parsing, transforming, an
 ## Features
 
 - **Type-Safe Parsing**: Validates HAR files using Pydantic models, catching errors early.
-- **Transformers**: Apply built-in or custom transformations to each HAR entry (e.g., flattening, normalization).
+- **Transformers**: Apply built-in or custom transformations to each HAR entry (e.g., stringifying, normalization).
 - **Normalization**: Ensures all numeric fields (sizes, timings) are non-negative, so you can safely sum, aggregate, and analyze data without errors from negative values. This is crucial for analytics and reporting.
 - **Deterministic & Random IDs**: Generate unique or deterministic IDs for each entry. Deterministic IDs ensure that the same request always gets the same ID—useful for deduplication, comparison, and building analytics pipelines.
 - **Extensible**: Register your own entry models to support browser-specific or proprietary HAR extensions (e.g., Chrome DevTools, Safari).
@@ -25,12 +25,12 @@ pip install hario-core
 ## Quickstart
 
 ```python
-from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
+from hario_core import parse, Pipeline, by_field, normalize_sizes, stringify
 
-# Build a processing pipeline: deterministic ID, normalization, flattening
+# Build a processing pipeline: deterministic ID, normalization, stringifying
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[normalize_sizes(), flatten()],
+    transformers=[normalize_sizes(), stringify()],
 )
 
 # Parse your HAR file (from path, bytes, or file-like object)

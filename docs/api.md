@@ -141,13 +141,13 @@ id_fn = uuid()
 
 Transformers are functions that mutate or normalize HAR entry data for storage or analysis.
 
-### `flatten`
+### `stringify`
 
-Flattens nested structures in a HAR entry to a single level, stringifying deep or large fields (useful for DB storage).
+Stringifies nested structures in a HAR entry to a single level, stringifying deep or large fields (useful for DB storage).
 
 **Signature:**
 ```python
-def flatten(
+def stringify(
     max_depth: int = 3,
     size_limit: int = 32_000,
 ) -> Transformer
@@ -157,7 +157,7 @@ def flatten(
 
 **Example:**
 ```python
-flat_entry = flatten()(entry)
+string_entry = stringify()(entry)
 ```
 
 ### `normalize_sizes`
@@ -207,11 +207,11 @@ class Pipeline:
 ## Example: Full Pipeline
 
 ```python
-from hario_core import Pipeline, by_field, flatten, normalize_sizes, parse
+from hario_core import Pipeline, by_field, stringify, normalize_sizes, parse
 
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[flatten(), normalize_sizes()],
+    transformers=[stringify(), normalize_sizes()],
 )
 
 model = parse("example.har")
