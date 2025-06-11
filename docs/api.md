@@ -242,6 +242,6 @@ for entry in har_log.entries:
 ---
 
 ## See Also
-- [Quickstart](index.md)
-- [Contributing](contributing.md)
-- [Changelog](changelog.md) 
+- [Quickstart](https://github.com/pikulev/hario-core/blob/main/docs/index.md)
+- [Contributing](https://github.com/pikulev/hario-core/blob/main/docs/contributing.md)
+- [Changelog](https://github.com/pikulev/hario-core/blob/main/docs/changelog.md) 

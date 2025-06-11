@@ -9,7 +9,7 @@ Hario Core is a modern, extensible, and type-safe Python library for parsing, tr
 - **Transformers**: Built-in and custom functions (like `flatten`, `normalize_sizes`, `normalize_timings`) to mutate or normalize HAR entries for storage or analytics.
 - **Utils**: Utilities for ID generation (`by_field`, `uuid`), model registration (`register_entry_model`), and more.
 
-See the [API Reference](api.md) for detailed usage, signatures, and extension patterns.
+See the [API Reference](https://github.com/pikulev/hario-core/blob/main/docs/api.md) for detailed usage, signatures, and extension patterns.
 
 ## Key Features
 
@@ -79,4 +79,4 @@ pip install hario-core
 
 ---
 
-See the [API Reference](api.md) for more details and advanced usage. 
+See the [API Reference](https://github.com/pikulev/hario-core/blob/main/docs/api.md) for more details and advanced usage. 
