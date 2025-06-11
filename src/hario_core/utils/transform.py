@@ -4,7 +4,7 @@ This module provides a set of functions that can be used to transform HAR data.
 """
 
 import json
-from typing import Any, Dict, Protocol
+from typing import Any, Callable, Dict, Optional, Protocol
 
 from hario_core.models.har_1_2 import Entry
 
@@ -12,6 +12,7 @@ __all__ = [
     "stringify",
     "normalize_sizes",
     "normalize_timings",
+    "flatten",
 ]
 
 
@@ -113,5 +114,48 @@ def normalize_timings() -> Transformer:
             ):
                 parent[last] = 0.0
         return data
+
+    return transformer
+
+
+def _default_array_handler(arr: list[Any], path: str) -> str:
+    return str(arr)
+
+
+def flatten(
+    separator: str = ".",
+    array_handler: Optional[Callable[[list[Any], str], Any]] = None,
+) -> Transformer:
+    """
+    Flattens a nested dict (or Entry) into a flat dict with keys joined by separator.
+    If a list is encountered, array_handler is called (default: str).
+    Returns a Transformer.
+
+    Args:
+        separator: Separator for keys (default: '.')
+        array_handler: function (arr: list, path: str) -> value. Default is str(arr)
+    """
+    if array_handler is None:
+        array_handler = _default_array_handler
+
+    def _flatten(
+        obj: Any, parent_key: str = "", result: Optional[dict[str, Any]] = None
+    ) -> dict[str, Any]:
+        if result is None:
+            result = {}
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                new_key = f"{parent_key}{separator}{k}" if parent_key else k
+                _flatten(v, new_key, result)
+        elif isinstance(obj, list):
+            # For lists, call array_handler
+            result[parent_key] = array_handler(obj, parent_key)
+        else:
+            result[parent_key] = obj
+        return result
+
+    def transformer(entry: Entry) -> dict[str, Any]:
+        doc = entry.model_dump()
+        return _flatten(doc)
 
     return transformer

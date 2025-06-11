@@ -12,7 +12,12 @@ from typing import Any, Dict
 import pytest
 
 from hario_core.models.har_1_2 import Entry
-from hario_core.utils.transform import normalize_sizes, normalize_timings, stringify
+from hario_core.utils.transform import (
+    flatten,
+    normalize_sizes,
+    normalize_timings,
+    stringify,
+)
 
 # Используем только реальные сэмплы через фикстуры
 
@@ -195,3 +200,27 @@ class TestTransform:
             entry_missing.pop(field, None)
             with pytest.raises(Exception):
                 Entry.model_validate(entry_missing)
+
+    def test_flatten_basic_headers(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten()(entry)
+        # Check that nested keys became flat
+        assert "request.headers" in flat
+        assert isinstance(flat["request.headers"], str)
+        assert "response.headers" in flat
+        assert isinstance(flat["response.headers"], str)
+
+    def test_flatten_custom_array_handler(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        # array_handler returns a string with path and array length
+        flat = flatten(array_handler=lambda arr, path: f"{path}:{len(arr)}")(entry)
+        assert "request.headers" in flat
+        assert isinstance(flat["request.headers"], str)
+        expected = f"request.headers:{len(cleaned_entry['request']['headers'])}"
+        assert flat["request.headers"] == expected
+
+    def test_flatten_separator(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(separator="__")(entry)
+        assert "request__headers" in flat
+        assert "response__headers" in flat

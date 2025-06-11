@@ -160,6 +160,34 @@ def stringify(
 string_entry = stringify()(entry)
 ```
 
+### `flatten`
+
+Flattens nested structures in a HAR entry to a flat dict with keys joined by separator. If a list is encountered, array_handler is called (default: str). Useful for exporting to CSV, analytics, or custom DB schemas.
+
+**Signature:**
+```python
+def flatten(
+    separator: str = ".",
+    array_handler: Callable[[list, str], Any] = None,
+) -> Transformer
+```
+- `separator`: Separator for keys (default: '.')
+- `array_handler`: Function (lambda arr, path) -> value. Default is str(arr)
+
+**Example:**
+```python
+import hashlib
+flat_entry = flatten(
+    array_handler=lambda arr, path: hashlib.md5(str(arr).encode()).hexdigest()
+    if path == 'initiator.stack.callFrames' else str(arr)
+)(entry)
+# flat_entry['initiator.stack.callFrames'] == 'e99a18c428cb38d5f260853678922e03' (example hash)
+```
+
+**Difference from stringify:**
+- `flatten` produces a fully flat dict with all nested keys joined by separator.
+- `stringify` only stringifies deep or large nested structures, but keeps the overall shape.
+
 ### `normalize_sizes`
 
 Normalizes negative size fields in request/response to zero.
@@ -207,11 +235,11 @@ class Pipeline:
 ## Example: Full Pipeline
 
 ```python
-from hario_core import Pipeline, by_field, stringify, normalize_sizes, parse
+from hario_core import Pipeline, by_field, stringify, flatten, normalize_sizes, parse
 
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[stringify(), normalize_sizes()],
+    transformers=[stringify(), flatten(), normalize_sizes()],
 )
 
 model = parse("example.har")
