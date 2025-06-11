@@ -176,12 +176,13 @@ def flatten(
 
 **Example:**
 ```python
-import hashlib
-flat_entry = flatten(
-    array_handler=lambda arr, path: hashlib.md5(str(arr).encode()).hexdigest()
-    if path == 'initiator.stack.callFrames' else str(arr)
-)(entry)
-# flat_entry['initiator.stack.callFrames'] == 'e99a18c428cb38d5f260853678922e03' (example hash)
+def header_handler(arr, path):
+    # Each header becomes a separate key by name
+    return {f"{path}.{item['name']}": item["value"] for item in arr if isinstance(item, dict) and "name" in item and "value" in item}
+
+flat_entry = flatten(array_handler=header_handler)(entry)
+# flat_entry['request.headers.user-agent'] == 'Mozilla/5.0 ...'
+# flat_entry['request.headers.:authority'] == 'test.test'
 ```
 
 **Difference from stringify:**

@@ -7,7 +7,7 @@ Unit tests for transformation logic in hario-core.
 """
 
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
@@ -224,3 +224,84 @@ class TestTransform:
         flat = flatten(separator="__")(entry)
         assert "request__headers" in flat
         assert "response__headers" in flat
+
+    def test_flatten_headers_to_keys_by_name(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        from urllib.parse import quote
+
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}.{quote(item['name'], safe='')}": item["value"]
+                for item in arr
+                if isinstance(item, dict) and "name" in item and "value" in item
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry)
+        # Check for user-agent and :authority keys
+        assert any("user-agent" in k for k in flat)
+        assert any("%3Aauthority" in k for k in flat)
+        # Value matches original
+        headers = {h["name"]: h["value"] for h in cleaned_entry["request"]["headers"]}
+        for k in flat:
+            if "user-agent" in k:
+                assert flat[k] == headers["user-agent"]
+            if "%3Aauthority" in k:
+                assert flat[k] == headers[":authority"]
+
+    def test_flatten_default_array_handler_is_str(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten()(entry)
+        # By default, headers is a string
+        assert isinstance(flat["request.headers"], str)
+        assert "user-agent" in flat["request.headers"]
+
+    def test_flatten_array_handler_returns_multiple_keys(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}.len": len(arr),
+                f"{path}.first_name": (
+                    arr[0]["name"] if arr and "name" in arr[0] else None
+                ),
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry)
+        assert flat["request.headers.len"] == len(cleaned_entry["request"]["headers"])
+        assert (
+            flat["request.headers.first_name"]
+            == cleaned_entry["request"]["headers"][0]["name"]
+        )
+
+    def test_flatten_array_handler_returns_dict(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {f"{path}.foo.bar": 1}
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry)
+        # Key is as returned by handler, not escaped
+        assert "request.headers.foo.bar" in flat
+        assert flat["request.headers.foo.bar"] == 1
+
+    def test_flatten_header_by_name(self, cleaned_entry: Dict[str, Any]) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}_{item['name']}": item["value"]
+                for item in arr
+                if isinstance(item, dict) and "name" in item and "value" in item
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(separator="_", array_handler=handler)(entry)
+        # There should be a key with the encoded ':authority' name
+        assert "request_headers_:authority" in flat
+        # Value should match the original
+        headers = {h["name"]: h["value"] for h in cleaned_entry["request"]["headers"]}
+        assert flat["request_headers_:authority"] == headers[":authority"]

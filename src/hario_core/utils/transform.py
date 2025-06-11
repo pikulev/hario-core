@@ -4,7 +4,7 @@ This module provides a set of functions that can be used to transform HAR data.
 """
 
 import json
-from typing import Any, Callable, Dict, Optional, Protocol
+from typing import Any, Callable, Dict, Optional, Protocol, Union
 
 from hario_core.models.har_1_2 import Entry
 
@@ -124,22 +124,23 @@ def _default_array_handler(arr: list[Any], path: str) -> str:
 
 def flatten(
     separator: str = ".",
-    array_handler: Optional[Callable[[list[Any], str], Any]] = None,
+    array_handler: Optional[
+        Callable[[list[Any], str], Union[Any, dict[str, Any]]]
+    ] = None,
 ) -> Transformer:
     """
     Flattens a nested dict (or Entry) into a flat dict with keys joined by separator.
-    If a list is encountered, array_handler is called (default: str).
-    Returns a Transformer.
-
-    Args:
-        separator: Separator for keys (default: '.')
-        array_handler: function (arr: list, path: str) -> value. Default is str(arr)
+    If a list is encountered, array_handler is called.
+    - If array_handler returns a dict, its keys/values are merged into the result.
+    - If array_handler returns a value, it is used as the value for the current key.
     """
     if array_handler is None:
         array_handler = _default_array_handler
 
     def _flatten(
-        obj: Any, parent_key: str = "", result: Optional[dict[str, Any]] = None
+        obj: Any,
+        parent_key: str = "",
+        result: Optional[dict[str, Any]] = None,
     ) -> dict[str, Any]:
         if result is None:
             result = {}
@@ -148,8 +149,11 @@ def flatten(
                 new_key = f"{parent_key}{separator}{k}" if parent_key else k
                 _flatten(v, new_key, result)
         elif isinstance(obj, list):
-            # For lists, call array_handler
-            result[parent_key] = array_handler(obj, parent_key)
+            value = array_handler(obj, parent_key)
+            if isinstance(value, dict):
+                result.update(value)
+            else:
+                result[parent_key] = value
         else:
             result[parent_key] = obj
         return result
