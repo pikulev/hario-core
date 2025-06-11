@@ -27,10 +27,10 @@ pip install hario-core
 ```python
 from hario_core import parse, Pipeline, by_field, normalize_sizes, stringify, flatten
 
-# Build a processing pipeline: deterministic ID, normalization, stringifying, flattening
+# Build a processing pipeline: deterministic ID and size normalization
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[normalize_sizes(), stringify(), flatten()],
+    transformers=[normalize_sizes()],
 )
 
 # Parse your HAR file (from path, bytes, or file-like object)
@@ -39,10 +39,6 @@ result_dict = pipeline.process(model)
 
 for entry in result_dict:
     print(entry["id"], entry["request"]["url"])
-
-# Example: flatten with custom array_handler and separator
-flat = flatten(array_handler=lambda arr, path: f"{path}:{len(arr)}", separator="__")(model.entries[0])
-print(flat["request__headers"])  # 'request__headers:10' (for example)
 ```
 
 ## Documentation
