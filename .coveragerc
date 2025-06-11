@@ -1,10 +1,11 @@
 [run]
+source = src
 omit =
+    tests/*
+    */tests/*
     src/hario_core/interfaces.py
 
 [report]
 exclude_lines =
-    # Exclude abstract methods and NotImplemented
-    @abc\.abstractmethod
-    raise NotImplementedError
     pragma: no cover
+    if __name__ == .__main__.:
