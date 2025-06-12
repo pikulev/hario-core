@@ -89,11 +89,10 @@ for entry in har_log.entries:
 ```
 
 ### `Transformer`
-A transformer is a function that takes an `Entry` (or its extension) and returns a dict (possibly mutated/transformed).
+A transformer is a function that takes a dict (parsed HAR entry) and returns a dict (possibly mutated/transformed).
 
 ```python
-def my_transformer(entry: Entry) -> dict:
-    data = entry.model_dump()
+def my_transformer(data: dict[str, Any]) -> dict[str, Any]:
     # mutate data
     return data
 ```
@@ -141,24 +140,6 @@ id_fn = uuid()
 
 Transformers are functions that mutate or normalize HAR entry data for storage or analysis.
 
-### `stringify`
-
-Stringifies nested structures in a HAR entry to a single level, stringifying deep or large fields (useful for DB storage).
-
-**Signature:**
-```python
-def stringify(
-    max_depth: int = 3,
-    size_limit: int = 32_000,
-) -> Transformer
-```
-- `max_depth`: Maximum depth to keep as dicts/lists (default: 3).
-- `size_limit`: Maximum size (in bytes) for nested data before stringifying (default: 32,000).
-
-**Example:**
-```python
-string_entry = stringify()(entry)
-```
 
 ### `flatten`
 
@@ -184,10 +165,6 @@ flat_entry = flatten(array_handler=header_handler)(entry)
 # flat_entry['request.headers.user-agent'] == 'Mozilla/5.0 ...'
 # flat_entry['request.headers.:authority'] == 'test.test'
 ```
-
-**Difference from stringify:**
-- `flatten` produces a fully flat dict with all nested keys joined by separator.
-- `stringify` only stringifies deep or large nested structures, but keeps the overall shape.
 
 ### `normalize_sizes`
 
@@ -236,11 +213,11 @@ class Pipeline:
 ## Example: Full Pipeline
 
 ```python
-from hario_core import Pipeline, by_field, stringify, flatten, normalize_sizes, parse
+from hario_core import Pipeline, by_field, flatten, normalize_sizes, parse
 
 pipeline = Pipeline(
     id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[stringify(), flatten(), normalize_sizes()],
+    transformers=[flatten(), normalize_sizes()],
 )
 
 model = parse("example.har")

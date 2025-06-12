@@ -3,75 +3,21 @@ Transformation logic for HAR data.
 This module provides a set of functions that can be used to transform HAR data.
 """
 
-from typing import Any, Callable, Dict, Optional, Protocol, Union, cast
+from typing import Any, Callable, Dict, Optional, Union, cast
 
 import orjson
 
-from hario_core.models.har_1_2 import Entry
+from hario_core.interfaces import Transformer
 
 __all__ = [
-    "stringify",
     "normalize_sizes",
     "normalize_timings",
     "flatten",
 ]
 
 
-class Transformer(Protocol):
-    def __call__(self, entry: Entry) -> Dict[str, Any]: ...
-
-
-def stringify(max_depth: int = 3, size_limit: int = 32_000) -> Transformer:
-    """
-    Flattens the HAR data into a single level.
-    This is useful for storing HAR data in a database.
-
-    Args:
-        max_depth: The maximum depth of the nested data to flatten.
-        size_limit: The maximum size (in bytes) of the nested data to flatten.
-    """
-
-    def transformer(entry: Entry) -> Dict[str, Any]:
-        doc = entry.model_dump()
-
-        def _should_stringify(name: str, value: Any, depth: int) -> bool:
-            if not isinstance(value, (dict, list)):
-                return False
-            if (
-                isinstance(value, list)
-                and len(orjson.dumps(value).decode("utf-8")) > size_limit
-            ):
-                return True
-            if depth >= max_depth:
-                return True
-            return False
-
-        result = doc.copy()
-        queue = [(result, k, k, 1) for k in list(result.keys())]
-        while queue:
-            parent, key, path, depth = queue.pop(0)
-            value = parent[key]
-            if _should_stringify(path, value, depth):
-                parent[key] = orjson.dumps(value).decode("utf-8")
-                continue
-            if isinstance(value, dict):
-                for child_key in list(value.keys()):
-                    queue.append((value, child_key, f"{path}.{child_key}", depth + 1))
-            elif isinstance(value, list) and value and isinstance(value[0], dict):
-                for i, item in enumerate(value):
-                    if isinstance(item, dict):
-                        for child_key in list(item.keys()):
-                            queue.append(
-                                (item, child_key, f"{path}[{i}].{child_key}", depth + 1)
-                            )
-        return result
-
-    return transformer
-
-
 def normalize_sizes() -> Transformer:
-    def transformer(entry: Entry) -> Dict[str, Any]:
-        data = entry.model_dump()
+    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
         for path in [
             ("request", "headersSize"),
             ("request", "bodySize"),
@@ -91,8 +37,7 @@ def normalize_sizes() -> Transformer:
 
 
 def normalize_timings() -> Transformer:
-    def transformer(entry: Entry) -> Dict[str, Any]:
-        data = entry.model_dump()
+    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
         timing_fields = [
             ("timings", "blocked"),
             ("timings", "dns"),
@@ -108,7 +53,7 @@ def normalize_timings() -> Transformer:
                 parent = parent.get(key, {})
             last = path[-1]
             if (
-                isinstance(parent, dict)
+                isinstance(parent, Dict)
                 and last in parent
                 and isinstance(parent[last], (int, float))
                 and parent[last] < 0
@@ -131,13 +76,13 @@ def _json_array_handler(arr: list[Any], path: str) -> str:
 def flatten(
     separator: str = ".",
     array_handler: Optional[
-        Callable[[list[Any], str], Union[Any, dict[str, Any]]]
+        Callable[[list[Any], str], Union[Any, Dict[str, Any]]]
     ] = None,
 ) -> Transformer:
     """
-    Flattens a nested dict (or Entry) into a flat dict with keys joined by separator.
+    Flattens a nested Dict (or Entry) into a flat Dict with keys joined by separator.
     If a list is encountered, array_handler is called.
-    - If array_handler returns a dict, its keys/values are merged into the result.
+    - If array_handler returns a Dict, its keys/values are merged into the result.
     - If array_handler returns a value, it is used as the value for the current key.
     """
     if array_handler is None:
@@ -146,17 +91,17 @@ def flatten(
     def _flatten(
         obj: Any,
         parent_key: str = "",
-        result: Optional[dict[str, Any]] = None,
-    ) -> dict[str, Any]:
+        result: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         if result is None:
             result = {}
-        if isinstance(obj, dict):
+        if isinstance(obj, Dict):
             for k, v in obj.items():
                 new_key = f"{parent_key}{separator}{k}" if parent_key else k
                 _flatten(v, new_key, result)
         elif isinstance(obj, list):
             value = array_handler(obj, parent_key)
-            if isinstance(value, dict):
+            if isinstance(value, Dict):
                 result.update(value)
             else:
                 result[parent_key] = value
@@ -164,8 +109,7 @@ def flatten(
             result[parent_key] = obj
         return result
 
-    def transformer(entry: Entry) -> dict[str, Any]:
-        doc = entry.model_dump()
-        return _flatten(doc)
+    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
+        return _flatten(data)
 
     return transformer

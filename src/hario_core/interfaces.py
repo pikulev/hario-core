@@ -41,9 +41,9 @@ class Processor(Protocol):
 
 
 class Transformer(Protocol):
-    """Protocol for a transformer that can be called with a dict."""
+    """Protocol for a transformer that can be called with a dict (parsed HAR entry)."""
 
-    def __call__(self, entry: Entry) -> Dict[str, Any]:
+    def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transforms the dict in-place.
         User can mutate/add/remove fields as needed.

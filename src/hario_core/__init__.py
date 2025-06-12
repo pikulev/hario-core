@@ -38,12 +38,7 @@ from hario_core.models.har_1_2 import (
 )
 from hario_core.pipeline import Pipeline
 from hario_core.utils.id import by_field, uuid
-from hario_core.utils.transform import (
-    flatten,
-    normalize_sizes,
-    normalize_timings,
-    stringify,
-)
+from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
 
 __all__ = [
     # har_parser
@@ -57,7 +52,6 @@ __all__ = [
     "uuid",
     # transform utils
     "flatten",
-    "stringify",
     "normalize_sizes",
     "normalize_timings",
     # interfaces

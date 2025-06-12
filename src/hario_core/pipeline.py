@@ -1,8 +1,8 @@
 from typing import Any, Sequence
 
+from hario_core.interfaces import Transformer
 from hario_core.models.har_1_2 import HarLog
 from hario_core.utils.id import EntryIdFn
-from hario_core.utils.transform import Transformer
 
 __all__ = ["Pipeline"]
 
@@ -45,7 +45,7 @@ class Pipeline:
         for entry in har_log.entries:
             entry_dict = entry.model_dump()
             for transform in self.transformers:
-                entry_dict = transform(entry)
+                entry_dict = transform(entry_dict)
             id = self.id_fn(entry)
             entry_dict[self.id_field] = id
             results.append(entry_dict)
