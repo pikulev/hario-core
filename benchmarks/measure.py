@@ -3,6 +3,8 @@ import pstats
 import sys
 import time
 import tracemalloc
+import hashlib
+import orjson
 
 from hario_core import Pipeline, by_field, parse
 from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
@@ -42,6 +44,27 @@ def bench_full(har_log):
     return run_pipeline(pipeline, har_log, "full pipeline")
 
 
+class CpuHeavy:
+    def __call__(self, data):
+        payload = orjson.dumps(data)
+        for _ in range(500):
+            payload = hashlib.sha256(payload).digest()
+        data["cpu_hash"] = payload.hex()
+        return data
+
+
+def cpu_heavy_transformer():
+    return CpuHeavy()
+
+
+def bench_cpu_heavy(har_log):
+    pipeline = Pipeline(
+        id_fn=by_field(["request.url", "startedDateTime"]),
+        transformers=[cpu_heavy_transformer(), flatten()],
+    )
+    return run_pipeline(pipeline, har_log, "cpu_heavy_transformer")
+
+
 def run_pipeline(pipeline, har_log, label):
     print(f"\n--- Benchmark: {label} ---")
     tracemalloc.start()
@@ -58,8 +81,8 @@ def run_pipeline(pipeline, har_log, label):
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in {"flatten", "normalize", "full"}:
-        print("Usage: python measure.py [flatten|normalize|full] [--profile]")
+    if len(sys.argv) < 2 or sys.argv[1] not in {"flatten", "normalize", "full", "cpu_heavy"}:
+        print("Usage: python measure.py [flatten|normalize|full|cpu_heavy] [--profile]")
         sys.exit(1)
     mode = sys.argv[1]
     do_profile = "--profile" in sys.argv
@@ -73,6 +96,7 @@ def main():
         "normalize_sizes": bench_normalize_sizes,
         "normalize_timings": bench_normalize_timings,
         "full": bench_full,
+        "cpu_heavy": bench_cpu_heavy,
     }
 
     bench_func = bench_map[mode]
