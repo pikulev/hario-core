@@ -6,10 +6,10 @@ Core logic for reading, validating, and extending HAR (HTTP Archive) files.
 - Handles both standard HAR and Chrome DevTools extensions out of the box.
 """
 
-import json
 from pathlib import Path
 from typing import IO, Any, Callable, Union, cast
 
+import orjson
 from pydantic import ValidationError
 
 from hario_core.models.extensions.chrome_devtools import DevToolsEntry
@@ -65,14 +65,17 @@ register_entry_model(is_devtools_entry, DevToolsEntry)
 JsonSource = Union[str, Path, bytes, bytearray, IO[Any]]
 
 
-def _read_json(src: JsonSource) -> dict[str, Any]:
+def _to_bytes(src: JsonSource) -> bytes:
     if isinstance(src, (str, Path)):
         with open(src, "rb") as fh:
-            return cast(dict[str, Any], json.load(fh))
+            return fh.read()
     if isinstance(src, (bytes, bytearray)):
-        return cast(dict[str, Any], json.loads(src))
-    # assume file‑like
-    return cast(dict[str, Any], json.load(src))
+        return cast(bytes, src)
+    return cast(bytes, src.read())
+
+
+def _read_json(src: JsonSource) -> dict[str, Any]:
+    return cast(dict[str, Any], orjson.loads(_to_bytes(src)))
 
 
 def parse(
@@ -104,5 +107,5 @@ def parse(
 
         # Validate the entire HarLog object at once
         return HarLog.model_validate(log_data)
-    except (KeyError, ValidationError, json.JSONDecodeError) as exc:
+    except (KeyError, ValidationError, orjson.JSONDecodeError) as exc:
         raise ValueError("Invalid HAR file") from exc

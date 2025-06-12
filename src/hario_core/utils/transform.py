@@ -3,8 +3,9 @@ Transformation logic for HAR data.
 This module provides a set of functions that can be used to transform HAR data.
 """
 
-import json
-from typing import Any, Callable, Dict, Optional, Protocol, Union
+from typing import Any, Callable, Dict, Optional, Protocol, Union, cast
+
+import orjson
 
 from hario_core.models.har_1_2 import Entry
 
@@ -38,7 +39,7 @@ def stringify(max_depth: int = 3, size_limit: int = 32_000) -> Transformer:
                 return False
             if (
                 isinstance(value, list)
-                and len(json.dumps(value, separators=(",", ":"))) > size_limit
+                and len(orjson.dumps(value).decode("utf-8")) > size_limit
             ):
                 return True
             if depth >= max_depth:
@@ -51,7 +52,7 @@ def stringify(max_depth: int = 3, size_limit: int = 32_000) -> Transformer:
             parent, key, path, depth = queue.pop(0)
             value = parent[key]
             if _should_stringify(path, value, depth):
-                parent[key] = json.dumps(value, ensure_ascii=False)
+                parent[key] = orjson.dumps(value).decode("utf-8")
                 continue
             if isinstance(value, dict):
                 for child_key in list(value.keys()):
@@ -118,8 +119,13 @@ def normalize_timings() -> Transformer:
     return transformer
 
 
-def _default_array_handler(arr: list[Any], path: str) -> str:
-    return str(arr)
+def _json_array_handler(arr: list[Any], path: str) -> str:
+    """
+    JSON array handler that returns a compact JSON string.
+    """
+    if not arr:
+        return "[]"
+    return cast(str, orjson.dumps(arr).decode("utf-8"))
 
 
 def flatten(
@@ -135,7 +141,7 @@ def flatten(
     - If array_handler returns a value, it is used as the value for the current key.
     """
     if array_handler is None:
-        array_handler = _default_array_handler
+        array_handler = _json_array_handler
 
     def _flatten(
         obj: Any,

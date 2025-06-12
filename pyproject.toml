@@ -34,6 +34,7 @@ keywords = [
 ]
 dependencies = [
     "pydantic>=2.5.0",
+    "orjson==3.10.18",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +52,7 @@ dev = [
     "mkdocs-material==9.5.26",
     "mkdocstrings[python]==0.25.1",
     "mkdocs-autorefs==0.5.0",
+    "snakeviz==2.2.2",
 ]
 
 [project.urls]

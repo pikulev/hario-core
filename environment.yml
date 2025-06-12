@@ -6,6 +6,7 @@ dependencies:
   - python=3.10
   - pip
   - pydantic>=2.5.0
+  - orjson=3.10.18
   # dev-dependencies
   - pytest=8.2.2
   - pytest-cov
@@ -24,3 +25,4 @@ dependencies:
   - pip:
       - mkdocstrings[python]==0.25.1
       - pydocstyle[toml]==6.3.0
+      - snakeviz==2.2.2

@@ -58,6 +58,13 @@ class DevToolsRequest(Request):
     requestId: Optional[str] = Field(None, alias="_requestId")
 
 
+class DevToolsWebSocketMessage(BaseModel):
+    type: str
+    time: float
+    opcode: int
+    data: str
+
+
 class DevToolsEntry(Entry):
     """HAR Entry object with DevTools extensions."""
 
@@ -65,6 +72,9 @@ class DevToolsEntry(Entry):
     priority: Optional[str] = Field(None, alias="_priority")
     resourceType: str = Field(alias="_resourceType")
     connectionId: Optional[str] = Field(None, alias="_connectionId")
+    webSocketMessages: Optional[List[DevToolsWebSocketMessage]] = Field(
+        None, alias="_webSocketMessages"
+    )
 
     # Override fields from base Entry to use the extended models
     request: DevToolsRequest

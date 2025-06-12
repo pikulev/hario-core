@@ -1,7 +1,8 @@
 """Sample HAR data for testing purposes."""
 
-import json
 from typing import Any, Dict, List
+
+import orjson
 
 # Общий массив pages для обоих сэмплов
 PAGES: List[Dict[str, Any]] = [
@@ -155,7 +156,7 @@ CHROME_DEVTOOLS_HAR: Dict[str, Any] = {
     }
 }
 
-CHROME_DEVTOOLS_HAR_BYTES: bytes = json.dumps(CHROME_DEVTOOLS_HAR).encode("utf-8")
+CHROME_DEVTOOLS_HAR_BYTES: bytes = orjson.dumps(CHROME_DEVTOOLS_HAR)
 
 # Valid HAR 1.2
 CLEANED_HAR: Dict[str, Any] = {
@@ -271,7 +272,7 @@ CLEANED_HAR: Dict[str, Any] = {
     }
 }
 
-CLEANED_HAR_BYTES: bytes = json.dumps(CLEANED_HAR).encode("utf-8")
+CLEANED_HAR_BYTES: bytes = orjson.dumps(CLEANED_HAR)
 
 # Edge-case: HAR without log field (based on real HAR)
 INVALID_HAR_NO_LOG: Dict[str, Any] = {

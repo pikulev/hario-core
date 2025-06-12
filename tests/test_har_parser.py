@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict
 from unittest.mock import patch
 
+import orjson
 import pytest
 
 from hario_core import har_parser
@@ -68,7 +69,7 @@ class TestHarParser:
 
     def test_load_har_with_mixed_entries(self) -> None:
         """Tests loading a HAR with mixed entry types."""
-        har_log = parse(json.dumps(CHROME_DEVTOOLS_HAR).encode("utf-8"))
+        har_log = parse(orjson.dumps(CHROME_DEVTOOLS_HAR))
         assert len(har_log.entries) == 1
         assert isinstance(har_log.entries[0], Entry)
         assert isinstance(har_log.entries[0], DevToolsEntry)
@@ -121,7 +122,7 @@ class TestHarParser:
 
     def test_load_har_with_dict(self) -> None:
         """Tests loading a HAR from a dictionary by encoding it first."""
-        result = parse(json.dumps(CLEANED_HAR).encode("utf-8"))
+        result = parse(orjson.dumps(CLEANED_HAR))
         assert isinstance(result.entries, list)
         assert len(result.entries) == 1
         assert isinstance(result.entries[0], Entry)
@@ -142,7 +143,7 @@ class TestHarParser:
     def test_load_har_missing_log(self) -> None:
         """Tests loading a HAR with a missing 'log' field."""
         with pytest.raises(ValueError, match="Invalid HAR file"):
-            parse(json.dumps(INVALID_HAR_NO_LOG).encode("utf-8"))
+            parse(orjson.dumps(INVALID_HAR_NO_LOG))
 
     def test_load_har_with_invalid_file_path(self) -> None:
         """Tests loading a HAR from a non-existent file path."""
@@ -152,17 +153,17 @@ class TestHarParser:
     def test_load_har_missing_version(self) -> None:
         """Tests that a HAR file with a missing version raises an error."""
         with pytest.raises(ValueError, match="Invalid HAR file"):
-            parse(json.dumps(INVALID_HAR_NO_VERSION).encode("utf-8"))
+            parse(orjson.dumps(INVALID_HAR_NO_VERSION))
 
     def test_load_har_missing_entries(self) -> None:
         """Tests that a HAR file with a missing entries raises an error."""
         with pytest.raises(ValueError, match="Invalid HAR file"):
-            parse(json.dumps(INVALID_HAR_NO_ENTRIES).encode("utf-8"))
+            parse(orjson.dumps(INVALID_HAR_NO_ENTRIES))
 
     def test_load_har_log_without_entries(self) -> None:
         """Checks that ValueError is raised if 'log' has no 'entries'."""
         with pytest.raises(ValueError, match="Invalid HAR file"):
-            parse(json.dumps(INVALID_HAR_LOG_EMPTY).encode("utf-8"))
+            parse(orjson.dumps(INVALID_HAR_LOG_EMPTY))
 
     def test_load_har_log_with_version_but_no_entries(self) -> None:
         """
@@ -170,11 +171,9 @@ class TestHarParser:
         and 'creator', but no 'entries'.
         """
         with pytest.raises(ValueError, match="Invalid HAR file"):
-            parse(
-                json.dumps(INVALID_HAR_LOG_WITH_VERSION_BUT_NO_ENTRIES).encode("utf-8")
-            )
+            parse(orjson.dumps(INVALID_HAR_LOG_WITH_VERSION_BUT_NO_ENTRIES))
 
     def test_load_har_root_not_dict(self) -> None:
         """Checks that ValueError is raised if root element is not a dict."""
         with pytest.raises(ValueError, match="root element must be a JSON object"):
-            parse(json.dumps(INVALID_HAR_ROOT_NOT_DICT).encode("utf-8"))
+            parse(orjson.dumps(INVALID_HAR_ROOT_NOT_DICT))

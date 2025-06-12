@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Benchmarks
+benchmarks/*.har
+benchmarks/*.stats
+
 # C extensions
 *.so
 
