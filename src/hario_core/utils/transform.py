@@ -16,8 +16,8 @@ __all__ = [
 ]
 
 
-def normalize_sizes() -> Transformer:
-    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
+class NormalizeSizes:
+    def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         for path in [
             ("request", "headersSize"),
             ("request", "bodySize"),
@@ -33,11 +33,13 @@ def normalize_sizes() -> Transformer:
                 parent[last] = 0
         return data
 
-    return transformer
+
+def normalize_sizes() -> Transformer:
+    return NormalizeSizes()
 
 
-def normalize_timings() -> Transformer:
-    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
+class NormalizeTimings:
+    def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         timing_fields = [
             ("timings", "blocked"),
             ("timings", "dns"),
@@ -53,7 +55,7 @@ def normalize_timings() -> Transformer:
                 parent = parent.get(key, {})
             last = path[-1]
             if (
-                isinstance(parent, Dict)
+                isinstance(parent, dict)
                 and last in parent
                 and isinstance(parent[last], (int, float))
                 and parent[last] < 0
@@ -61,7 +63,9 @@ def normalize_timings() -> Transformer:
                 parent[last] = 0.0
         return data
 
-    return transformer
+
+def normalize_timings() -> Transformer:
+    return NormalizeTimings()
 
 
 def _json_array_handler(arr: list[Any], path: str) -> str:
@@ -73,35 +77,21 @@ def _json_array_handler(arr: list[Any], path: str) -> str:
     return cast(str, orjson.dumps(arr).decode("utf-8"))
 
 
-def flatten(
-    separator: str = ".",
-    array_handler: Optional[
-        Callable[[list[Any], str], Union[Any, Dict[str, Any]]]
-    ] = None,
-) -> Transformer:
-    """
-    Flattens a nested Dict (or Entry) into a flat Dict with keys joined by separator.
-    If a list is encountered, array_handler is called.
-    - If array_handler returns a Dict, its keys/values are merged into the result.
-    - If array_handler returns a value, it is used as the value for the current key.
-    """
-    if array_handler is None:
-        array_handler = _json_array_handler
+class Flatten:
+    def __init__(self, separator: str = ".", array_handler: Optional[Callable[[list[Any], str], Any]] = None):
+        self.separator = separator
+        self.array_handler = array_handler or _json_array_handler
 
-    def _flatten(
-        obj: Any,
-        parent_key: str = "",
-        result: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+    def _flatten(self, obj: Any, parent_key: str = "", result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if result is None:
             result = {}
-        if isinstance(obj, Dict):
+        if isinstance(obj, dict):
             for k, v in obj.items():
-                new_key = f"{parent_key}{separator}{k}" if parent_key else k
-                _flatten(v, new_key, result)
+                new_key = f"{parent_key}{self.separator}{k}" if parent_key else k
+                self._flatten(v, new_key, result)
         elif isinstance(obj, list):
-            value = array_handler(obj, parent_key)
-            if isinstance(value, Dict):
+            value = self.array_handler(obj, parent_key)
+            if isinstance(value, dict):
                 result.update(value)
             else:
                 result[parent_key] = value
@@ -109,7 +99,9 @@ def flatten(
             result[parent_key] = obj
         return result
 
-    def transformer(data: Dict[str, Any]) -> Dict[str, Any]:
-        return _flatten(data)
+    def __call__(self, doc: Dict[str, Any]) -> Dict[str, Any]:
+        return self._flatten(doc)
 
-    return transformer
+
+def flatten(separator: str = ".", array_handler: Optional[Callable[[list[Any], str], Any]] = None) -> Transformer:
+    return Flatten(separator, array_handler)
