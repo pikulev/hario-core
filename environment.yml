@@ -22,7 +22,10 @@ dependencies:
   - mkdocstrings=0.25.1
   - mkdocs-autorefs=0.5.0
   - poetry
+  - rich=13.9.4
   - pip:
+      - -e .
       - mkdocstrings[python]==0.25.1
       - pydocstyle[toml]==6.3.0
       - snakeviz==2.2.2
+      - rich==13.9.4
