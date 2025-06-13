@@ -1,36 +1,71 @@
-from typing import Any, Sequence
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Optional, Sequence
 
 from hario_core.interfaces import Transformer
 from hario_core.models.har_1_2 import HarLog
-from hario_core.utils.id import EntryIdFn
+from hario_core.strategies import (
+    AsyncStrategy,
+    ProcessingStrategy,
+    ProcessPoolStrategy,
+    SequentialStrategy,
+    ThreadPoolStrategy,
+)
 
 __all__ = ["Pipeline"]
+
+
+def _chunked(seq: list[Any], size: int) -> list[list[Any]]:
+    return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+
+@dataclass
+class PipelineConfig:
+    batch_size: int = 12
+    processing_strategy: str = "process"
+    max_workers: Optional[int] = None
+
+
+DEFAULT_PIPELINE_CONFIG = PipelineConfig()
 
 
 class Pipeline:
     """
     Pipeline for processing HAR data (HarLog, Pydantic model).
+    Uses threading for parallel transformation.
 
     Args:
-        id_fn: EntryIdFn
-            A function that generates an ID for an entry.
-        id_field: str
-            The field name to store the generated ID.
-            Defaults to "id".
         transformers: Sequence[Transformer]
             A sequence of transformers to apply to HAR entries.
             Defaults to an empty sequence.
+        config: PipelineConfig
+            Configuration object with batch_size, processing_strategy, max_workers.
+            Если не передан, используется DEFAULT_PIPELINE_CONFIG.
     """
 
     def __init__(
         self,
-        id_fn: EntryIdFn,
-        id_field: str = "id",
         transformers: Sequence[Transformer] = (),
+        config: PipelineConfig = DEFAULT_PIPELINE_CONFIG,
     ):
-        self.id_fn = id_fn
         self.transformers = list(transformers)
-        self.id_field = id_field
+        self.config = config
+        self.batch_size = self.config.batch_size
+        self.strategy = self._get_strategy(
+            self.config.processing_strategy, self.config.max_workers
+        )
+
+    def _get_strategy(
+        self, strategy_name: str, max_workers: Optional[int]
+    ) -> ProcessingStrategy:
+        strategies = {
+            "process": ProcessPoolStrategy(max_workers),
+            "thread": ThreadPoolStrategy(max_workers),
+            "sequential": SequentialStrategy(),
+            "async": AsyncStrategy(),
+        }
+        return strategies.get(strategy_name, ProcessPoolStrategy(max_workers))
 
     def process(self, har_log: HarLog) -> list[dict[str, Any]]:
         """
@@ -38,15 +73,9 @@ class Pipeline:
         Returns a list of transformed dicts with assigned IDs.
         """
         if not hasattr(har_log, "entries") or not isinstance(har_log.entries, list):
-            raise TypeError(
-                "Pipeline.process expects a HarLog (Pydantic model with .entries)"
-            )
-        results = []
-        for entry in har_log.entries:
-            entry_dict = entry.model_dump()
-            for transform in self.transformers:
-                entry_dict = transform(entry_dict)
-            id = self.id_fn(entry)
-            entry_dict[self.id_field] = id
-            results.append(entry_dict)
-        return results
+            raise TypeError("Pipeline.process expects a HarLog with .entries list")
+
+        entries = har_log.model_dump()["entries"]
+        batches = _chunked(entries, self.batch_size)
+
+        return self.strategy.process_batches(batches, self.transformers)

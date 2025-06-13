@@ -3,20 +3,24 @@ Transformation logic for HAR data.
 This module provides a set of functions that can be used to transform HAR data.
 """
 
-from typing import Any, Callable, Dict, Optional, Union, cast
-
-import orjson
+from typing import Any, Callable, Dict, Optional
 
 from hario_core.interfaces import Transformer
+from hario_core.utils.defaults import json_array_handler
 
 __all__ = [
     "normalize_sizes",
     "normalize_timings",
     "flatten",
+    "set_id",
 ]
 
 
 class NormalizeSizes:
+    """
+    A transformer that normalizes the sizes of the request and response.
+    """
+
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         for path in [
             ("request", "headersSize"),
@@ -39,6 +43,10 @@ def normalize_sizes() -> Transformer:
 
 
 class NormalizeTimings:
+    """
+    A transformer that normalizes the timings of the request.
+    """
+
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
         timing_fields = [
             ("timings", "blocked"),
@@ -68,21 +76,22 @@ def normalize_timings() -> Transformer:
     return NormalizeTimings()
 
 
-def _json_array_handler(arr: list[Any], path: str) -> str:
+class Flatten(Transformer):
     """
-    JSON array handler that returns a compact JSON string.
+    A transformer that flattens the nested structure of the HAR data.
     """
-    if not arr:
-        return "[]"
-    return cast(str, orjson.dumps(arr).decode("utf-8"))
 
-
-class Flatten:
-    def __init__(self, separator: str = ".", array_handler: Optional[Callable[[list[Any], str], Any]] = None):
+    def __init__(
+        self,
+        separator: str = ".",
+        array_handler: Optional[Callable[[list[Any], str], Any]] = None,
+    ):
         self.separator = separator
-        self.array_handler = array_handler or _json_array_handler
+        self.array_handler = array_handler or json_array_handler
 
-    def _flatten(self, obj: Any, parent_key: str = "", result: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _flatten(
+        self, obj: Any, parent_key: str = "", result: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         if result is None:
             result = {}
         if isinstance(obj, dict):
@@ -103,5 +112,26 @@ class Flatten:
         return self._flatten(doc)
 
 
-def flatten(separator: str = ".", array_handler: Optional[Callable[[list[Any], str], Any]] = None) -> Transformer:
-    return Flatten(separator, array_handler)
+def flatten(
+    separator: str = ".",
+    array_handler: Optional[Callable[[list[Any], str], Any]] = None,
+) -> Transformer:
+    return Flatten(separator, array_handler or json_array_handler)
+
+
+class SetId:
+    """
+    A transformer that sets the ID of the HAR data.
+    """
+
+    def __init__(self, id_fn: Callable[[Dict[str, Any]], str], id_field: str = "id"):
+        self.id_fn = id_fn
+        self.id_field = id_field
+
+    def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        data[self.id_field] = self.id_fn(data)
+        return data
+
+
+def set_id(id_fn: Callable[[Dict[str, Any]], str], id_field: str = "id") -> Transformer:
+    return SetId(id_fn, id_field)

@@ -12,7 +12,6 @@ __version__ = "0.2.0"  # Bump version after refactoring
 
 from hario_core.har_parser import entry_selector, parse, register_entry_model
 from hario_core.interfaces import (
-    EntryIdFn,
     HarParser,
     HarStorageRepository,
     Processor,
@@ -36,9 +35,14 @@ from hario_core.models.har_1_2 import (
     Response,
     Timings,
 )
-from hario_core.pipeline import Pipeline
-from hario_core.utils.id import by_field, uuid
-from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
+from hario_core.pipeline import Pipeline, PipelineConfig
+from hario_core.utils.defaults import by_field, json_array_handler, uuid
+from hario_core.utils.transform import (
+    flatten,
+    normalize_sizes,
+    normalize_timings,
+    set_id,
+)
 
 __all__ = [
     # har_parser
@@ -47,19 +51,21 @@ __all__ = [
     "register_entry_model",
     # pipeline
     "Pipeline",
-    # id utils
+    "PipelineConfig",
+    # defaults
     "by_field",
     "uuid",
-    # transform utils
+    "json_array_handler",
+    # transformers
     "flatten",
     "normalize_sizes",
     "normalize_timings",
+    "set_id",
     # interfaces
     "HarStorageRepository",
     "HarParser",
     "Processor",
     "Transformer",
-    "EntryIdFn",
     # models
     "Entry",
     "HarLog",

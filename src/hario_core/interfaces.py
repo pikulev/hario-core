@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple, runtime_checkable
 
-from hario_core.models.har_1_2 import Entry, HarLog
+from hario_core.models.har_1_2 import HarLog
 
 """
 Type protocols and interfaces for hario-core.
@@ -16,7 +16,6 @@ __all__ = [
     "HarParser",
     "Processor",
     "Transformer",
-    "EntryIdFn",
     "HarStorageRepository",
 ]
 
@@ -40,21 +39,28 @@ class Processor(Protocol):
         ...
 
 
+class ProcessorConfig(Protocol):
+    """Protocol for a processor configuration."""
+
+    batch_size: int
+    processing_strategy: str
+    max_workers: Optional[int]
+
+
+@runtime_checkable
 class Transformer(Protocol):
-    """Protocol for a transformer that can be called with a dict (parsed HAR entry)."""
+    """Protocol for transformers that process HAR entries."""
 
     def __call__(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Transforms the dict in-place.
-        User can mutate/add/remove fields as needed.
+        """Transform the data.
+
+        Args:
+            data: The data to transform.
+
+        Returns:
+            The transformed data.
         """
         ...
-
-
-class EntryIdFn(Protocol):
-    """Protocol for a function that generates an ID for a HAR entry."""
-
-    def __call__(self, entry: Entry) -> str: ...
 
 
 class HarStorageRepository(Protocol):
