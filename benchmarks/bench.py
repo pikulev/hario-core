@@ -1,14 +1,14 @@
 from bench_core import (
     STRATEGIES, HAR_PATH,
     bench_flatten, bench_full, bench_normalize_sizes, bench_normalize_timings, bench_cpu_heavy,
-    create_results_table, create_results_csv, average_run
+    create_results_table, create_results_csv, average_run, get_entries
 )
-from hario_core import parse
 from rich.console import Console
 import argparse
 import cProfile
 import pstats
 import sys
+
 
 
 def main() -> None:
@@ -60,8 +60,8 @@ def main() -> None:
 
     console = Console()
     console.print(f"Loading HAR file: {har_path} ...")
-    har_log = parse(har_path)
-    console.print(f"Loaded {len(har_log.entries)} entries.")
+    entries = get_entries(har_path)
+    console.print(f"Loaded {len(entries)} entries.")
 
     bench_map = {
         "flatten": bench_flatten,
@@ -79,7 +79,7 @@ def main() -> None:
         profile_file = f"benchmarks/{mode}.stats"
         console.print(f"Profiling... profile saved in {profile_file} (strategy: {profile_strategy})")
         def prof():
-            bench_func(har_log, profile_strategy, use_gc=use_gc)
+            bench_func(entries, profile_strategy, use_gc=use_gc)
         cProfile.runctx("prof()", globals(), locals(), profile_file)
         p = pstats.Stats(profile_file)
         console.print("\n=== TOP-20 functions by cumtime ===\n")
@@ -91,13 +91,13 @@ def main() -> None:
             for test_name, bench_func in bench_map.items():
                 for strategy in STRATEGIES:
                     console.print(f"\n[bold]Running {test_name} with {strategy} strategy...[/bold]")
-                    elapsed, current, peak, rss = average_run(bench_func, har_log, strategy, use_gc=use_gc)
+                    elapsed, current, peak, rss = average_run(bench_func, entries, strategy, use_gc=use_gc)
                     results[strategy][test_name] = (elapsed, current, peak, rss)
         else:
             bench_func = bench_map[mode]
             for strategy in STRATEGIES:
                 console.print(f"\n[bold]Running {mode} with {strategy} strategy...[/bold]")
-                elapsed, current, peak, rss = average_run(bench_func, har_log, strategy, use_gc=use_gc)
+                elapsed, current, peak, rss = average_run(bench_func, entries, strategy, use_gc=use_gc)
                 results[strategy][mode] = (elapsed, current, peak, rss)
         # Display results table
         table = create_results_table(results)
@@ -106,7 +106,6 @@ def main() -> None:
         if args.csv:
             filename = None if args.csv == "-" else args.csv
             create_results_csv(results, filename)
-
 
 if __name__ == "__main__":
     main()

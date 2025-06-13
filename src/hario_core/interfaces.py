@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, Tuple, runtime_checkable
+from pathlib import Path
+from typing import (
+    IO,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 from hario_core.models.har_1_2 import HarLog
 
@@ -13,11 +24,14 @@ Type protocols and interfaces for hario-core.
 """
 
 __all__ = [
+    "JsonSource",
     "HarParser",
     "Processor",
     "Transformer",
     "HarStorageRepository",
 ]
+
+JsonSource = Union[str, Path, bytes, bytearray, IO[Any]]
 
 
 class HarParser(Protocol):
@@ -34,7 +48,7 @@ class Processor(Protocol):
     source and returns a list of dicts.
     """
 
-    def process(self, src: Any) -> List[Dict[str, Any]]:
+    def process(self, entries: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Processes the source and returns a list of dicts."""
         ...
 

@@ -3,8 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence
 
-from hario_core.interfaces import Transformer
-from hario_core.models.har_1_2 import HarLog
+from hario_core.interfaces import Processor, Transformer
 from hario_core.strategies import (
     AsyncStrategy,
     ProcessingStrategy,
@@ -30,7 +29,7 @@ class PipelineConfig:
 DEFAULT_PIPELINE_CONFIG = PipelineConfig()
 
 
-class Pipeline:
+class Pipeline(Processor):
     """
     Pipeline for processing HAR data (HarLog, Pydantic model).
     Uses threading for parallel transformation.
@@ -67,15 +66,16 @@ class Pipeline:
         }
         return strategies.get(strategy_name, ProcessPoolStrategy(max_workers))
 
-    def process(self, har_log: HarLog) -> list[dict[str, Any]]:
+    def process(self, entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """
-        Process a HarLog object (already parsed HAR data, Pydantic model).
+        Process a list of HAR entry dicts (model_dump'ed entries).
         Returns a list of transformed dicts with assigned IDs.
         """
-        if not hasattr(har_log, "entries") or not isinstance(har_log.entries, list):
-            raise TypeError("Pipeline.process expects a HarLog with .entries list")
-
-        entries = har_log.model_dump()["entries"]
+        if not isinstance(entries, list) or (
+            entries and not isinstance(entries[0], dict)
+        ):
+            raise TypeError(
+                "Pipeline.process expects a list of dicts (model_dump'ed entries)"
+            )
         batches = _chunked(entries, self.batch_size)
-
         return self.strategy.process_batches(batches, self.transformers)

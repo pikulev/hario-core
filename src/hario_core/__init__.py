@@ -10,7 +10,7 @@ Hario Core package root.
 
 __version__ = "0.2.0"  # Bump version after refactoring
 
-from hario_core.har_parser import entry_selector, parse, register_entry_model
+from hario_core.har_parser import entry_selector, parse, register_entry_model, validate
 from hario_core.interfaces import (
     HarParser,
     HarStorageRepository,
@@ -45,8 +45,8 @@ from hario_core.utils.transform import (
 )
 
 __all__ = [
-    # har_parser
     "parse",
+    "validate",
     "entry_selector",
     "register_entry_model",
     # pipeline

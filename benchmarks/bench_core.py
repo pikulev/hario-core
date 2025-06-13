@@ -17,7 +17,8 @@ from hario_core import (
     flatten,
     normalize_sizes,
     normalize_timings,
-    set_id
+    set_id,
+    parse,
 )
 
 REPEAT = 5
@@ -27,8 +28,15 @@ MAX_WORKERS = 6
 HAR_PATH = "benchmarks/test_lg.har"
 STRATEGIES = ["process", "thread", "sequential", "async"]
 
+def get_entries(har_path: str) -> dict:
+    """
+    Get entries from HAR file.
+    """
+    har_log = parse(har_path)
+    return har_log.model_dump()['entries']
 
-def bench_flatten(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+
+def bench_flatten(entries: dict, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     config = PipelineConfig(
         batch_size=BATCH_SIZE,
         processing_strategy=strategy,
@@ -38,10 +46,10 @@ def bench_flatten(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[flo
         transformers=[set_id(by_field(["request.url", "startedDateTime"])), flatten()],
         config=config,
     )
-    return run_pipeline(pipeline, har_log, f"flatten ({strategy})", use_gc=use_gc)
+    return run_pipeline(pipeline, entries, f"flatten ({strategy})", use_gc=use_gc)
 
 
-def bench_normalize_sizes(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+def bench_normalize_sizes(entries: dict, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     config = PipelineConfig(
         batch_size=BATCH_SIZE,
         processing_strategy=strategy,
@@ -51,10 +59,10 @@ def bench_normalize_sizes(har_log: Any, strategy: str, use_gc: bool = True) -> T
         transformers=[set_id(by_field(["request.url", "startedDateTime"])), normalize_sizes()],
         config=config,
     )
-    return run_pipeline(pipeline, har_log, f"normalize_sizes ({strategy})", use_gc=use_gc)
+    return run_pipeline(pipeline, entries, f"normalize_sizes ({strategy})", use_gc=use_gc)
 
 
-def bench_normalize_timings(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+def bench_normalize_timings(entries: dict, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     config = PipelineConfig(
         batch_size=BATCH_SIZE,
         processing_strategy=strategy,
@@ -64,10 +72,10 @@ def bench_normalize_timings(har_log: Any, strategy: str, use_gc: bool = True) ->
         transformers=[set_id(by_field(["request.url", "startedDateTime"])), normalize_timings()],
         config=config,
     )
-    return run_pipeline(pipeline, har_log, f"normalize_timings ({strategy})", use_gc=use_gc)
+    return run_pipeline(pipeline, entries, f"normalize_timings ({strategy})", use_gc=use_gc)
 
 
-def bench_full(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+def bench_full(entries: dict, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     config = PipelineConfig(
         batch_size=BATCH_SIZE,
         processing_strategy=strategy,
@@ -82,7 +90,7 @@ def bench_full(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float,
         ],
         config=config,
     )
-    return run_pipeline(pipeline, har_log, f"full pipeline ({strategy})", use_gc=use_gc)
+    return run_pipeline(pipeline, entries, f"full pipeline ({strategy})", use_gc=use_gc)
 
 
 class CpuHeavy:
@@ -98,7 +106,7 @@ def cpu_heavy_transformer() -> CpuHeavy:
     return CpuHeavy()
 
 
-def bench_cpu_heavy(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+def bench_cpu_heavy(entries: dict, strategy: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     config = PipelineConfig(
         batch_size=BATCH_SIZE,
         processing_strategy=strategy,
@@ -108,17 +116,17 @@ def bench_cpu_heavy(har_log: Any, strategy: str, use_gc: bool = True) -> Tuple[f
         transformers=[set_id(by_field(["request.url", "startedDateTime"])), cpu_heavy_transformer(), flatten()],
         config=config,
     )
-    return run_pipeline(pipeline, har_log, f"cpu_heavy_transformer ({strategy})", use_gc=use_gc)
+    return run_pipeline(pipeline, entries, f"cpu_heavy_transformer ({strategy})", use_gc=use_gc)
 
 
-def run_pipeline(pipeline: Pipeline, har_log: Any, label: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
+def run_pipeline(pipeline: Pipeline, entries: dict, label: str, use_gc: bool = True) -> Tuple[float, int, int, int]:
     if use_gc:
         gc.collect()
     else:
         gc.disable()
     tracemalloc.start()
     start = time.perf_counter()
-    result = pipeline.process(har_log)
+    result = pipeline.process(entries)
     elapsed = time.perf_counter() - start
     current, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
@@ -128,13 +136,13 @@ def run_pipeline(pipeline: Pipeline, har_log: Any, label: str, use_gc: bool = Tr
     return elapsed, current, peak, rss
 
 
-def average_run(bench_func, har_log, strategy, use_gc=True):
+def average_run(bench_func, entries: dict, strategy: str, use_gc: bool = True):
     times = []
     currents = []
     peaks = []
     rss_list = []
     for _ in range(REPEAT):
-        elapsed, current, peak, rss = bench_func(har_log, strategy, use_gc=use_gc)
+        elapsed, current, peak, rss = bench_func(entries, strategy, use_gc=use_gc)
         times.append(elapsed)
         currents.append(current)
         peaks.append(peak)
