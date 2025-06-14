@@ -4,7 +4,7 @@ from typing import Any, Dict, List
 
 import orjson
 
-# Общий массив pages для обоих сэмплов
+# Common pages for both samples
 PAGES: List[Dict[str, Any]] = [
     {
         "startedDateTime": "2025-06-05T19:27:31.869Z",
@@ -26,7 +26,7 @@ PAGES: List[Dict[str, Any]] = [
     },
 ]
 
-# Реальный DevTools Chrome HAR (с _initiator, _resourceType и др.)
+# Real Chrome DevTools HAR (with _initiator, _resourceType, etc.)
 CHROME_DEVTOOLS_HAR: Dict[str, Any] = {
     "log": {
         "version": "1.2",

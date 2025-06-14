@@ -38,7 +38,7 @@ class Pipeline(Processor):
             Defaults to an empty sequence.
         config: PipelineConfig
             Configuration object with batch_size, processing_strategy, max_workers.
-            Если не передан, используется DEFAULT_PIPELINE_CONFIG.
+            If not provided, uses DEFAULT_PIPELINE_CONFIG.
     """
 
     def __init__(
