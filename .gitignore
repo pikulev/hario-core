@@ -6,6 +6,7 @@ __pycache__/
 # Benchmarks
 benchmarks/*.har
 benchmarks/*.stats
+benchmarks/*.csv
 
 # C extensions
 *.so

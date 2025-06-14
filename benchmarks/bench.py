@@ -105,7 +105,7 @@ def main() -> None:
         # CSV output
         if args.csv:
             filename = None if args.csv == "-" else args.csv
-            create_results_csv(results, filename)
+            create_results_csv(results, f"benchmarks/{filename}")
 
 if __name__ == "__main__":
     main()
