@@ -2,10 +2,10 @@ from typing import Any, Dict
 
 import pytest
 
-from hario_core.transform import by_field, json_array_handler, uuid
+from hario_core.transform import by_field, uuid
 
 
-class TestDefaults:
+class TestId:
     def test_by_field_deterministic(self, cleaned_entry: Dict[str, Any]) -> None:
         id_fn = by_field(["request.url", "startedDateTime"])
         id1 = id_fn(cleaned_entry)
@@ -47,27 +47,6 @@ class TestDefaults:
         with pytest.raises(KeyError):
             id_fn(cleaned_entry)
 
-    def test_by_field_not_dict_raises_value_error(
-        self, cleaned_entry: Dict[str, Any]
-    ) -> None:
-        # Make "url" a string, so the next step can't access "something"
-        id_fn = by_field(["request.url.something"])
-        with pytest.raises(
-            ValueError, match="Field 'request.url.something' is not a dictionary"
-        ):
-            id_fn(cleaned_entry)
-
-    def test_by_field_none_raises_value_error(
-        self, cleaned_entry: Dict[str, Any]
-    ) -> None:
-        # Make "url" a string, so the next step can't access "something"
-        cleaned_entry["request"]["nonexistent"] = None
-        id_fn = by_field(["request.nonexistent"])
-        with pytest.raises(ValueError, match="Field 'request.nonexistent' is None"):
-            id_fn(cleaned_entry)
-        # remove the None
-        del cleaned_entry["request"]["nonexistent"]
-
     def test_uuid_unique(self, cleaned_entry: Dict[str, Any]) -> None:
         uuid_fn = uuid()
         ids = {uuid_fn(cleaned_entry) for _ in range(10)}
@@ -76,16 +55,17 @@ class TestDefaults:
             assert isinstance(val, str)
             assert len(val) == 36
 
-    def test_json_array_handler_empty(self) -> None:
-        assert json_array_handler([], "some.path") == "[]"
+    def test_by_field_not_dict_raises_value_error(self, cleaned_entry: Dict[str, Any]) -> None:
+        # Make "url" a string, so the next step can't access "something"
+        id_fn = by_field(["request.url.something"])
+        with pytest.raises(ValueError, match="Field 'request.url.something' is not a dictionary"):
+            id_fn(cleaned_entry)
 
-    def test_json_array_handler_numbers(self) -> None:
-        arr = [1, 2, 3]
-        result = json_array_handler(arr, "numbers")
-        assert result == "[1,2,3]"
-
-    def test_json_array_handler_dicts(self) -> None:
-        arr = [{"a": 1}, {"b": 2}]
-        result = json_array_handler(arr, "dicts")
-        # orjson.dumps returns compact JSON without spaces
-        assert result == '[{"a":1},{"b":2}]'
+    def test_by_field_none_raises_value_error(self, cleaned_entry: Dict[str, Any]) -> None:
+        # Make "url" a string, so the next step can't access "something"
+        cleaned_entry["request"]["nonexistent"] = None
+        id_fn = by_field(["request.nonexistent"])
+        with pytest.raises(ValueError, match="Field 'request.nonexistent' is None"):
+            id_fn(cleaned_entry)
+        # remove the None
+        del cleaned_entry["request"]["nonexistent"]

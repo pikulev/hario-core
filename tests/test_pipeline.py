@@ -2,9 +2,15 @@ from typing import Any, Dict, List
 
 import pytest
 
-from hario_core.pipeline import Pipeline, PipelineConfig
-from hario_core.utils.defaults import by_field, uuid
-from hario_core.utils.transform import flatten, normalize_sizes, set_id
+from hario_core.transform import (
+    Pipeline,
+    PipelineConfig,
+    by_field,
+    flatten,
+    normalize_sizes,
+    set_id,
+    uuid,
+)
 
 
 class TestPipeline:

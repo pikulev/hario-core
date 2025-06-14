@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from hario_core.interfaces import Transformer
+from hario_core.transform.interfaces import Transformer
 
 _transformers: List[Transformer] = []
 

@@ -5,15 +5,8 @@ This module provides a set of functions that can be used to transform HAR data.
 
 from typing import Any, Callable, Dict, Optional
 
-from hario_core.interfaces import Transformer
-from hario_core.utils.defaults import json_array_handler
-
-__all__ = [
-    "normalize_sizes",
-    "normalize_timings",
-    "flatten",
-    "set_id",
-]
+from hario_core.transform.interfaces import Transformer
+from hario_core.transform.defaults import json_array_handler
 
 
 class NormalizeSizes:

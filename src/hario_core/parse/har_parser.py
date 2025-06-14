@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, cast
 import orjson
 from pydantic import ValidationError
 
-from hario_core.interfaces import JsonSource
+from hario_core.parse.interfaces import JsonSource
 from hario_core.models.extensions.chrome_devtools import DevToolsEntry
 from hario_core.models.har_1_2 import Entry, HarLog
 

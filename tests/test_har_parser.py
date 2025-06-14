@@ -6,6 +6,7 @@ Unit tests for the HAR parser in hario-core.
 - Ensure correct error handling for invalid and edge-case inputs.
 """
 
+import io
 import json
 from pathlib import Path
 from typing import Any, Callable, Dict, Type
@@ -14,10 +15,14 @@ from unittest.mock import patch
 import orjson
 import pytest
 
-from hario_core import har_parser, validate
-from hario_core.har_parser import entry_selector, parse, register_entry_model
-from hario_core.models.extensions.chrome_devtools import DevToolsEntry
-from hario_core.models.har_1_2 import Entry, HarLog
+from hario_core.models import DevToolsEntry, Entry, HarLog
+from hario_core.parse import (
+    entry_selector,
+    har_parser,
+    parse,
+    register_entry_model,
+    validate,
+)
 
 from .samples import (
     CHROME_DEVTOOLS_HAR,
@@ -113,7 +118,7 @@ class TestHarParser:
         assert har_log.entries[0].initiator is not None
         assert har_log.entries[0].initiator.type == "parser"
 
-    @patch("hario_core.har_parser.ENTRY_MODEL_REGISTRY", [])
+    @patch("hario_core.parse.har_parser.ENTRY_MODEL_REGISTRY", [])
     def test_register_entry_model(self) -> None:
         """Tests the registration of a custom entry model."""
 
@@ -144,7 +149,7 @@ class TestHarParser:
         entry_data = dict(CHROME_DEVTOOLS_HAR["log"]["entries"][0])
         # Test with a valid custom entry
         with patch(
-            "hario_core.har_parser.ENTRY_MODEL_REGISTRY",
+            "hario_core.parse.har_parser.ENTRY_MODEL_REGISTRY",
             [(custom_detector, CustomEntry)],
         ):
             model = entry_selector(entry_data)
@@ -152,7 +157,7 @@ class TestHarParser:
 
         # Test with a default entry when no custom model matches
         entry_data.pop("_connectionId")
-        with patch("hario_core.har_parser.ENTRY_MODEL_REGISTRY", []):
+        with patch("hario_core.parse.har_parser.ENTRY_MODEL_REGISTRY", []):
             model = entry_selector(entry_data)
             assert model is Entry
 
@@ -163,6 +168,13 @@ class TestHarParser:
             json.dump(CLEANED_HAR, f)
         result = parse(file_path)
         assert isinstance(result.entries, list)
+
+    def test_parse_with_file_like(self, cleaned_har: Dict[str, Any]) -> None:
+        data = orjson.dumps(cleaned_har)
+        file_like = io.BytesIO(data)
+        har_log = parse(file_like)
+        assert hasattr(har_log, "entries")
+        assert isinstance(har_log.entries, list)
 
     @pytest.mark.parametrize(
         "invalid_bytes",

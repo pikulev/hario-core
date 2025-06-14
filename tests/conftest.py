@@ -4,9 +4,8 @@ from typing import Any, Dict, List, cast
 
 import pytest
 
-from hario_core.har_parser import validate
-from hario_core.models.extensions.chrome_devtools import DevToolsEntry
-from hario_core.models.har_1_2 import Entry, HarLog
+from hario_core.models import DevToolsEntry, Entry, HarLog
+from hario_core.parse import validate
 
 from .samples import CHROME_DEVTOOLS_HAR, CLEANED_HAR
 

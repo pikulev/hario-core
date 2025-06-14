@@ -10,7 +10,7 @@ import os
 import csv
 from rich.table import Table
 
-from hario_core import (
+from hario_core.transform import (
     Pipeline,
     PipelineConfig,
     by_field,
@@ -18,8 +18,8 @@ from hario_core import (
     normalize_sizes,
     normalize_timings,
     set_id,
-    parse,
 )
+from hario_core.parse import parse
 
 REPEAT = 5
 BATCH_SIZE = 12

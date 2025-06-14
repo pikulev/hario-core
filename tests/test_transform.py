@@ -7,10 +7,8 @@ from typing import Any, Dict, List
 
 import pytest
 
-from hario_core.models.har_1_2 import Entry
-from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
-
-# Используем только реальные сэмплы через фикстуры
+from hario_core.models import Entry
+from hario_core.transform import flatten, normalize_sizes, normalize_timings
 
 
 class TestTransform:
