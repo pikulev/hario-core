@@ -1,5 +1,8 @@
 # Changelog
 
+### v0.4.1
+- FIX: Removed the mistakenly added `rich` dependency from the requirements.
+
 ### v0.4.0
 - BREAKING: The old `flatten` (which stringifies nested structures) is now called `stringify`.
 - BREAKING: The new `flatten` has different behavior—please update your code if you relied on the old flatten logic.
