@@ -28,7 +28,7 @@ pip install hario-core
 ### 1. Parse and validate a HAR file
 
 ```python
-from hario_core import parse
+from hario_core.parse import parse
 
 har_log = parse("example.har")
 entries = har_log.model_dump()["entries"]  # list of dicts
