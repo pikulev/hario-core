@@ -24,32 +24,65 @@ pip install hario-core
 
 ## Quickstart
 
+### 1. Parse and validate a HAR file
+
 ```python
-from hario_core import parse, Pipeline, by_field, normalize_sizes, flatten
+from hario_core import parse
 
-# Build a processing pipeline: deterministic ID, normalization, flattening
-pipeline = Pipeline(
-    id_fn=by_field(["request.url", "startedDateTime"]),
-    transformers=[normalize_sizes(), flatten()],
-)
-
-# Parse your HAR file (from path, bytes, or file-like object)
-model = parse("example.har")
-result_dict = pipeline.process(model)
-
-for entry in result_dict:
-    print(entry["id"], entry["request"]["url"])
+har_log = parse("example.har")
+entries = har_log.model_dump()["entries"]  # list of dicts
 ```
+
+### 2. Transform entries with a pipeline
+
+```python
+from hario_core.transform import Pipeline, flatten, set_id, by_field
+
+pipeline = Pipeline([
+    set_id(by_field(["request.url", "startedDateTime"]))
+])
+results = pipeline.process(entries)
+```
+
+### 3. Custom entry models (extensions)
+
+```python
+from hario_core.parse import register_entry_model
+from hario_core.models import Entry
+
+def is_custom_entry(entry: dict) -> bool:
+    return "x-custom" in entry
+
+class CustomEntry(Entry):
+    x_custom: str
+
+register_entry_model(is_custom_entry, CustomEntry)
+```
+
+## Public API
+
+### Parsing and validation
+- `parse(path_or_bytes_or_filelike) -> HarLog`
+- `validate(har_dict: dict) -> HarLog`
+- `register_entry_model(detector: Callable, model: Type[Entry])`
+- `entry_selector(entry_dict: dict) -> Type[Entry]`
+
+### Models
+- `Entry`, `HarLog`, `DevToolsEntry` (and all standard HAR 1.2 models)
+
+### Transform
+- `Pipeline`, `flatten`, `normalize_sizes`, `normalize_timings`, `set_id`, `by_field`, `uuid`, `json_array_handler`
 
 ## Documentation
 
-- [API Reference](docs/api.md)
-- [Changelog](docs/changelog.md)
-- [Contributing](CONTRIBUTING.md)
+- [API Reference](https://github.com/pikulev/hario-core/blob/main/docs/api.md)
+- [Changelog](https://github.com/pikulev/hario-core/blob/main/docs/changelog.md)
+- [Contributing](https://github.com/pikulev/hario-core/blob/main/CONTRIBUTING.md)
+
 
 ## License
 
-MIT License. See [LICENSE](LICENSE).
+MIT License. See [LICENSE](https://github.com/pikulev/hario-core/blob/main/LICENSE).
 
 ## Supported Python Versions
 
