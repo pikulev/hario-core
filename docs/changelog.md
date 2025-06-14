@@ -1,8 +1,11 @@
 # Changelog
 
 ### v0.4.0
+- BREAKING: The old `flatten` (which stringifies nested structures) is now called `stringify`.
+- BREAKING: The new `flatten` has different behavior—please update your code if you relied on the old flatten logic.
 - BREAKING: Pipeline now requires a list of transformers and a PipelineConfig instance (no more id_fn/id_field in constructor).
 - BREAKING: Pipeline.process now expects a list of dicts (e.g., from HarLog.model_dump()["entries"]).
+- New: Introduced a new `flatten` transformer that fully flattens nested HAR entries into a flat dict, with customizable key separator and flexible array handling via `array_handler`. Designed for advanced analytics and BI.
 - New: PipelineConfig class for configuring batch size, processing strategy (sequential/thread/process/async), and max_workers.
 - New: Parallel and batch processing strategies for large HAR files (process, thread, async).
 - New: Benchmarks and benchmarking scripts for pipeline performance (see `benchmarks/`).
