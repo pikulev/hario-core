@@ -1,5 +1,8 @@
 # Changelog
 
+### v0.4.2
+- FIX: Fixed serialization of extended fields (e.g., DevTools) in HarLog dump. Now all additional fields are correctly preserved when calling model_dump().
+
 ### v0.4.1
 - FIX: Removed the mistakenly added `rich` dependency from the requirements.
 
