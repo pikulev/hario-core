@@ -1,9 +1,10 @@
 # Hario Core — Type-safe HAR Model & Transform
 
-[![PyPI version](https://badge.fury.io/py/hario-core.svg)](https://badge.fury.io/py/hario-core)
+[![PyPI version](https://badge.fury.io/py/hario-core.svg?cachebust=1)](https://badge.fury.io/py/hario-core)
 [![Build Status](https://github.com/pikulev/hario-core/actions/workflows/python-package.yml/badge.svg)](https://github.com/pikulev/hario-core/actions/workflows/python-package.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![codecov](https://codecov.io/gh/pikulev/hario-core/branch/main/graph/badge.svg?token=BUJG4K634B)](https://codecov.io/gh/pikulev/hario-core)
+[![codecov](https://codecov.io/gh/pikulev/hario-core/graph/badge.svg?token=BUJG4K634B)](https://codecov.io/gh/pikulev/hario-core)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pikulev/hario-core)
 
 A modern, extensible, and type-safe Python library for parsing, transforming, and analyzing HAR (HTTP Archive) files. Built on Pydantic, Hario-Core provides robust validation, flexible transformation, and easy extension for custom HAR formats.
 
