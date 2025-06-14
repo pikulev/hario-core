@@ -1,5 +1,15 @@
 # Changelog
 
+### v0.4.0
+- BREAKING: Pipeline now requires a list of transformers and a PipelineConfig instance (no more id_fn/id_field in constructor).
+- BREAKING: Pipeline.process now expects a list of dicts (e.g., from HarLog.model_dump()["entries"]).
+- New: PipelineConfig class for configuring batch size, processing strategy (sequential/thread/process/async), and max_workers.
+- New: Parallel and batch processing strategies for large HAR files (process, thread, async).
+- New: Benchmarks and benchmarking scripts for pipeline performance (see `benchmarks/`).
+- New: All transformers (`flatten`, `normalize_sizes`, `normalize_timings`, `set_id`) are now implemented as picklable callable classes, fully compatible with multiprocessing.
+- New: `set_id` transformer for assigning IDs to entries using any function (e.g., by_field, uuid).
+- Internal: Test suite and samples updated for new API and real-world HAR compatibility.
+
 ### v0.3.1
 - FIX real-world HAR compatibility: made nested fields like `postData.params` optional in models, so parsing DevTools and other real HAR files is more robust.
 - All test samples are now based on real HAR data with valid `pages` and `pageref` links.
