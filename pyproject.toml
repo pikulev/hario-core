@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "hario-core"
-version = "0.4.1"
+version = "0.4.2"
 description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = [{name = "Vasiliy Pikulev", email = "pikulev.vasiliy@gmail.com"}]
 readme = "README.md"
@@ -106,7 +106,7 @@ convention = "google"
 
 [tool.poetry]
 name = "hario-core"
-version = "0.4.1"
+version = "0.4.2"
 description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = ["Vasiliy Pikulev <pikulev.vasiliy@gmail.com>"]
 readme = "README.md"

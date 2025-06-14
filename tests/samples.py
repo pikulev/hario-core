@@ -156,8 +156,6 @@ CHROME_DEVTOOLS_HAR: Dict[str, Any] = {
     }
 }
 
-CHROME_DEVTOOLS_HAR_BYTES: bytes = orjson.dumps(CHROME_DEVTOOLS_HAR)
-
 # Valid HAR 1.2
 CLEANED_HAR: Dict[str, Any] = {
     "log": {
@@ -273,6 +271,8 @@ CLEANED_HAR: Dict[str, Any] = {
 }
 
 CLEANED_HAR_BYTES: bytes = orjson.dumps(CLEANED_HAR)
+
+CHROME_DEVTOOLS_HAR_BYTES: bytes = orjson.dumps(CHROME_DEVTOOLS_HAR)
 
 # Edge-case: HAR without log field (based on real HAR)
 INVALID_HAR_NO_LOG: Dict[str, Any] = {

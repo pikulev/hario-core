@@ -98,7 +98,8 @@ class Entry(BaseModel):
     """HAR Entry object."""
 
     model_config = ConfigDict(
-        extra="forbid",
+        extra="allow",
+        populate_by_name=True,
     )
 
     pageref: Optional[str] = None
@@ -135,10 +136,21 @@ class Page(BaseModel):
 
 
 class HarLog(BaseModel):
-    model_config = ConfigDict(extra="forbid")  # strict: forbid vendor‑specific fields
+    model_config = ConfigDict(
+        extra="allow",
+        populate_by_name=True,
+    )
 
     version: str
     creator: Creator
     browser: Optional[Browser] = None
     pages: List[Page] = []
     entries: List[Entry]
+
+    def model_dump(self: HarLog, **kwargs: Any) -> Dict[str, Any]:
+        dump = super().model_dump(**kwargs)
+        # manually serialize entries with the actual type
+        dump["entries"] = [
+            entry.model_dump(**kwargs) for entry in self.entries if entry is not None
+        ]
+        return dump

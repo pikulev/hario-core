@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..har_1_2 import Entry, Request, Response, Timings
 
@@ -67,6 +67,11 @@ class DevToolsWebSocketMessage(BaseModel):
 
 class DevToolsEntry(Entry):
     """HAR Entry object with DevTools extensions."""
+
+    model_config = ConfigDict(
+        extra="allow",
+        populate_by_name=True,
+    )
 
     initiator: Optional[DevToolsInitiator] = Field(None, alias="_initiator")
     priority: Optional[str] = Field(None, alias="_priority")
