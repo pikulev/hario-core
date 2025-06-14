@@ -55,13 +55,19 @@ class TestId:
             assert isinstance(val, str)
             assert len(val) == 36
 
-    def test_by_field_not_dict_raises_value_error(self, cleaned_entry: Dict[str, Any]) -> None:
+    def test_by_field_not_dict_raises_value_error(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
         # Make "url" a string, so the next step can't access "something"
         id_fn = by_field(["request.url.something"])
-        with pytest.raises(ValueError, match="Field 'request.url.something' is not a dictionary"):
+        with pytest.raises(
+            ValueError, match="Field 'request.url.something' is not a dictionary"
+        ):
             id_fn(cleaned_entry)
 
-    def test_by_field_none_raises_value_error(self, cleaned_entry: Dict[str, Any]) -> None:
+    def test_by_field_none_raises_value_error(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
         # Make "url" a string, so the next step can't access "something"
         cleaned_entry["request"]["nonexistent"] = None
         id_fn = by_field(["request.nonexistent"])

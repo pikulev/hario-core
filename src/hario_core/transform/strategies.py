@@ -3,11 +3,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 from typing import Any, Dict, List, Optional
 
 from hario_core.transform.interfaces import Transformer
-
-from hario_core.transform.worker import (
-    init_worker,
-    process_batch,
-)
+from hario_core.transform.worker import init_worker, process_batch
 
 
 class ProcessingStrategy(ABC):

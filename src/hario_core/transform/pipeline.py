@@ -3,11 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence
 
-from hario_core.transform.interfaces import (
-    Processor,
-    ProcessorConfig,
-    Transformer,
-)
+from hario_core.transform.interfaces import Processor, ProcessorConfig, Transformer
 from hario_core.transform.strategies import (
     AsyncStrategy,
     ProcessingStrategy,
@@ -16,14 +12,15 @@ from hario_core.transform.strategies import (
     ThreadPoolStrategy,
 )
 
+
 def _chunked(seq: list[Any], size: int) -> list[list[Any]]:
     return [seq[i : i + size] for i in range(0, len(seq), size)]
 
 
 @dataclass
 class PipelineConfig(ProcessorConfig):
-    batch_size: int = 12
-    processing_strategy: str = "process"
+    batch_size: int = 20000
+    processing_strategy: str = "sequential"
     max_workers: Optional[int] = None
 
 
