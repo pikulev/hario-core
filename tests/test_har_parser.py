@@ -240,3 +240,22 @@ class TestHarParser:
         har["log"]["entries"] = dict()
         with pytest.raises(ValueError):
             validate(har)
+
+    def test_har_log_model_dump_preserves_extension_fields(self) -> None:
+        """
+        Test that har_log.model_dump() preserves
+        Chrome DevTools extension fields at all levels.
+        """
+        har_log = parse(CHROME_DEVTOOLS_HAR_BYTES)
+        dumped = har_log.model_dump()
+        # Check that entries exists and is not empty
+        assert "entries" in dumped
+        assert len(dumped["entries"]) > 0
+        entry_dump = dumped["entries"][0]
+        # Check that DevTools extension fields are preserved
+        assert "initiator" in entry_dump
+        assert "connectionId" in entry_dump
+        # Check that nested fields are preserved
+        assert isinstance(entry_dump["initiator"], dict)
+        assert entry_dump["initiator"]["type"] == "parser"
+        assert "transferSize" in entry_dump["response"]
