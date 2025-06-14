@@ -22,11 +22,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
 
-      - name: Lint with flake8, black, mypy
+      - name: Lint with pre-commit
         run: |
-          flake8 .
-          black --check .
-          mypy -p hario_core
+          pre-commit run --all-files
+
       - name: Test with pytest
         run: |
           pytest --cov --cov-branch --cov-report=xml

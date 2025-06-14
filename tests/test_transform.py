@@ -1,106 +1,17 @@
 """
 Unit tests for transformation logic in hario-core.
-
-- Test transformation of HAR entries for storage
-  (stringifying deep/large structures).
-- Cover edge cases for nested dicts, lists, and missing content.
 """
 
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import pytest
 
-from hario_core.models.har_1_2 import Entry
-from hario_core.utils.transform import flatten, normalize_sizes, normalize_timings
-
-# Используем только реальные сэмплы через фикстуры
+from hario_core.models import Entry
+from hario_core.transform import flatten, normalize_sizes, normalize_timings
 
 
 class TestTransform:
-    def test_transform_max_depth(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        doc["cache"]["level1"] = {"level2": {"level3": {"level4": "value"}}}
-        entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
-        val = transformed["cache"]["level1"]
-        if isinstance(val, Dict) and "level2" in val:
-            val2 = val["level2"]
-            if isinstance(val2, Dict) and "level3" in val2:
-                assert isinstance(val2["level3"], str)
-            else:
-                assert isinstance(val2, str)
-        else:
-            assert isinstance(val, str)
-
-    def test_transform_size_limit(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        large_list = [{"a": "b"}] * 5000
-        doc["cache"]["data"] = large_list
-        entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
-        assert isinstance(transformed["cache"]["data"], str)
-
-    def test_no_transform_needed(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        doc["cache"]["level1"] = {"key": "value"}
-        doc["cache"]["list"] = [1, 2, 3]
-        entry = Entry.model_validate(doc)
-        original_doc = entry.model_dump()
-        transformed = flatten()(entry)
-        assert transformed == original_doc
-
-    def test_transform_with_no_content(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        doc["response"]["status"] = 200
-        entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
-        assert "content" in transformed["response"]
-        assert transformed["response"]["status"] == 200
-
-    def test_transform_list_of_dicts(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        doc["cache"]["level1"] = [
-            {"level2_a": {"level3_a": {"level4_a": "value"}}},
-            {"level2_b": {"level3_b": "value"}},
-        ]
-        entry = Entry.model_validate(doc)
-        transformed = flatten()(entry)
-        assert isinstance(transformed["cache"]["level1"], list)
-        val = transformed["cache"]["level1"][0]["level2_a"]
-        if isinstance(val, Dict) and "level3_a" in val:
-            assert isinstance(val["level3_a"], str)
-        else:
-            assert isinstance(val, str)
-        val2 = transformed["cache"]["level1"][1]["level2_b"]
-        assert isinstance(val2, (Dict, str))
-
-    def test_flatten_depth_and_size_limit(self, cleaned_entry: Dict[str, Any]) -> None:
-        doc = deepcopy(cleaned_entry)
-        doc["cache"]["a"] = {"b": {"c": {"d": [1, 2, 3]}}}
-        entry = Entry.model_validate(doc)
-        flat = flatten(max_depth=2)(entry)
-        val = flat["cache"]["a"]
-        if isinstance(val, Dict) and "b" in val:
-            bval = val["b"]
-            assert isinstance(bval, str)
-            assert '"c": {"d": [1, 2, 3]}' in bval
-        else:
-            assert isinstance(val, str)
-        big_list = list(range(10000))
-        doc2 = deepcopy(cleaned_entry)
-        doc2["cache"]["arr"] = big_list
-        entry2 = Entry.model_validate(doc2)
-        flat2 = flatten(size_limit=100)(entry2)
-        assert isinstance(flat2["cache"]["arr"], str)
-        doc3 = deepcopy(cleaned_entry)
-        doc3["cache"]["x"] = 1
-        doc3["cache"]["y"] = [1, 2, 3]
-        entry3 = Entry.model_validate(doc3)
-        flat3 = flatten()(entry3)
-        assert flat3["cache"]["x"] == 1
-        assert flat3["cache"]["y"] == [1, 2, 3]
-
     def test_normalize_sizes(self, cleaned_entry: Dict[str, Any]) -> None:
         doc = deepcopy(cleaned_entry)
         doc["request"]["headersSize"] = -1
@@ -109,7 +20,7 @@ class TestTransform:
         doc["response"]["bodySize"] = -2
         doc["response"]["content"]["size"] = -100
         entry = Entry.model_validate(doc)
-        result = normalize_sizes()(entry)
+        result = normalize_sizes()(entry.model_dump())
         assert result["request"]["headersSize"] == 0
         assert result["response"]["bodySize"] == 0
         assert result["response"]["content"]["size"] == 0
@@ -124,7 +35,7 @@ class TestTransform:
         doc["timings"]["receive"] = -100
         doc["timings"]["ssl"] = -3
         entry = Entry.model_validate(doc)
-        result = normalize_timings()(entry)
+        result = normalize_timings()(entry.model_dump())
         t = result["timings"]
         assert t["blocked"] == 0.0
         assert t["dns"] == 0.0
@@ -133,48 +44,6 @@ class TestTransform:
         assert t["ssl"] == 0.0
         assert t["connect"] == 0
         assert t["send"] == 1
-
-    def test_flatten_empty_and_noop(self, cleaned_entry_model: Entry) -> None:
-        flat = flatten()(cleaned_entry_model)
-        assert flat == cleaned_entry_model.model_dump()
-        doc2 = deepcopy(cleaned_entry_model.model_dump())
-        doc2["cache"]["a"] = 1
-        doc2["cache"]["b"] = 2
-        entry2 = Entry.model_validate(doc2)
-        flat2 = flatten()(entry2)
-        assert flat2 == entry2.model_dump()
-        entry3 = deepcopy(cleaned_entry_model)
-        entry3.cache["a"] = {}
-        flat3 = flatten()(entry3)
-        assert flat3 == entry3.model_dump()
-
-    def test_flatten_non_dict_input(self) -> None:
-        try:
-            flatten()([1, 2, 3])  # type: ignore
-        except Exception:
-            pass
-        else:
-            assert False, "flatten should raise an error on non-Dict"
-
-    def test_flatten_basic(self, cleaned_entry_model: Entry) -> None:
-        flat = flatten()(cleaned_entry_model)
-        assert isinstance(flat, Dict)
-        assert "request" in flat
-
-    def test_flatten_deep_structure(self, cleaned_entry_model: Entry) -> None:
-        entry = deepcopy(cleaned_entry_model)
-        entry.cache["deep"] = {"a": {"b": {"c": {"d": 1}}}}
-        flat = flatten(max_depth=2)(entry)
-        val = flat["cache"]["deep"]
-        if isinstance(val, Dict) and "a" in val:
-            aval = val["a"]
-            if isinstance(aval, Dict) and "b" in aval:
-                bval = aval["b"]
-                assert isinstance(bval, str)
-            else:
-                assert isinstance(aval, str)
-        else:
-            assert isinstance(val, str)
 
     def test_entry_validation_error_on_missing_fields(
         self, cleaned_entry: Dict[str, Any]
@@ -191,3 +60,110 @@ class TestTransform:
             entry_missing.pop(field, None)
             with pytest.raises(Exception):
                 Entry.model_validate(entry_missing)
+
+    def test_flatten_basic_headers(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten()(entry.model_dump())
+        # Check that nested keys became flat
+        assert "request.headers" in flat
+        assert isinstance(flat["request.headers"], str)
+        assert "response.headers" in flat
+        assert isinstance(flat["response.headers"], str)
+
+    def test_flatten_custom_array_handler(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        # array_handler returns a string with path and array length
+        flat = flatten(array_handler=lambda arr, path: f"{path}:{len(arr)}")(
+            entry.model_dump()
+        )
+        assert "request.headers" in flat
+        assert isinstance(flat["request.headers"], str)
+        expected = f"request.headers:{len(cleaned_entry['request']['headers'])}"
+        assert flat["request.headers"] == expected
+
+    def test_flatten_separator(self, cleaned_entry: Dict[str, Any]) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(separator="__")(entry.model_dump())
+        assert "request__headers" in flat
+        assert "response__headers" in flat
+
+    def test_flatten_headers_to_keys_by_name(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        from urllib.parse import quote
+
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}.{quote(item['name'], safe='')}": item["value"]
+                for item in arr
+                if isinstance(item, dict) and "name" in item and "value" in item
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry.model_dump())
+        # Check for user-agent and :authority keys
+        assert any("user-agent" in k for k in flat)
+        assert any("%3Aauthority" in k for k in flat)
+        # Value matches original
+        headers = {h["name"]: h["value"] for h in cleaned_entry["request"]["headers"]}
+        for k in flat:
+            if "user-agent" in k:
+                assert flat[k] == headers["user-agent"]
+            if "%3Aauthority" in k:
+                assert flat[k] == headers[":authority"]
+
+    def test_flatten_default_array_handler_is_str(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten()(entry.model_dump())
+        # By default, headers is a string
+        assert isinstance(flat["request.headers"], str)
+        assert "user-agent" in flat["request.headers"]
+
+    def test_flatten_array_handler_returns_multiple_keys(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}.len": len(arr),
+                f"{path}.first_name": (
+                    arr[0]["name"] if arr and "name" in arr[0] else None
+                ),
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry.model_dump())
+        assert flat["request.headers.len"] == len(cleaned_entry["request"]["headers"])
+        assert (
+            flat["request.headers.first_name"]
+            == cleaned_entry["request"]["headers"][0]["name"]
+        )
+
+    def test_flatten_array_handler_returns_dict(
+        self, cleaned_entry: Dict[str, Any]
+    ) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {f"{path}.foo.bar": 1}
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(array_handler=handler)(entry.model_dump())
+        # Key is as returned by handler, not escaped
+        assert "request.headers.foo.bar" in flat
+        assert flat["request.headers.foo.bar"] == 1
+
+    def test_flatten_header_by_name(self, cleaned_entry: Dict[str, Any]) -> None:
+        def handler(arr: List[Dict[str, Any]], path: str) -> Any:
+            return {
+                f"{path}_{item['name']}": item["value"]
+                for item in arr
+                if isinstance(item, dict) and "name" in item and "value" in item
+            }
+
+        entry = Entry.model_validate(cleaned_entry)
+        flat = flatten(separator="_", array_handler=handler)(entry.model_dump())
+        # There should be a key with the encoded ':authority' name
+        assert "request_headers_:authority" in flat
+        # Value should match the original
+        headers = {h["name"]: h["value"] for h in cleaned_entry["request"]["headers"]}
+        assert flat["request_headers_:authority"] == headers[":authority"]

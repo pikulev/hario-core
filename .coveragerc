@@ -1,6 +1,6 @@
 [run]
 omit =
-    src/hario_core/interfaces.py
+    src/hario_core/**/interfaces.py
 
 [report]
 exclude_lines =

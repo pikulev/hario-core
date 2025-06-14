@@ -1,9 +1,10 @@
 """Sample HAR data for testing purposes."""
 
-import json
 from typing import Any, Dict, List
 
-# Общий массив pages для обоих сэмплов
+import orjson
+
+# Common pages for both samples
 PAGES: List[Dict[str, Any]] = [
     {
         "startedDateTime": "2025-06-05T19:27:31.869Z",
@@ -25,7 +26,7 @@ PAGES: List[Dict[str, Any]] = [
     },
 ]
 
-# Реальный DevTools Chrome HAR (с _initiator, _resourceType и др.)
+# Real Chrome DevTools HAR (with _initiator, _resourceType, etc.)
 CHROME_DEVTOOLS_HAR: Dict[str, Any] = {
     "log": {
         "version": "1.2",
@@ -155,7 +156,7 @@ CHROME_DEVTOOLS_HAR: Dict[str, Any] = {
     }
 }
 
-CHROME_DEVTOOLS_HAR_BYTES: bytes = json.dumps(CHROME_DEVTOOLS_HAR).encode("utf-8")
+CHROME_DEVTOOLS_HAR_BYTES: bytes = orjson.dumps(CHROME_DEVTOOLS_HAR)
 
 # Valid HAR 1.2
 CLEANED_HAR: Dict[str, Any] = {
@@ -271,7 +272,7 @@ CLEANED_HAR: Dict[str, Any] = {
     }
 }
 
-CLEANED_HAR_BYTES: bytes = json.dumps(CLEANED_HAR).encode("utf-8")
+CLEANED_HAR_BYTES: bytes = orjson.dumps(CLEANED_HAR)
 
 # Edge-case: HAR without log field (based on real HAR)
 INVALID_HAR_NO_LOG: Dict[str, Any] = {

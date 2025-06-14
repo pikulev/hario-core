@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "hario-core"
-version = "0.3.1"
+version = "0.4.0"
 description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = [{name = "Vasiliy Pikulev", email = "pikulev.vasiliy@gmail.com"}]
 readme = "README.md"
@@ -34,6 +34,8 @@ keywords = [
 ]
 dependencies = [
     "pydantic>=2.5.0",
+    "orjson==3.10.18",
+    "rich==13.9.4",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +53,8 @@ dev = [
     "mkdocs-material==9.5.26",
     "mkdocstrings[python]==0.25.1",
     "mkdocs-autorefs==0.5.0",
+    "snakeviz==2.2.2",
+    "rich==13.9.4",
 ]
 
 [project.urls]
@@ -103,7 +107,7 @@ convention = "google"
 
 [tool.poetry]
 name = "hario-core"
-version = "0.3.1"
+version = "0.4.0"
 description = "Modern, type-safe, and extensible library for parsing, transforming, and analyzing HAR (HTTP Archive) files."
 authors = ["Vasiliy Pikulev <pikulev.vasiliy@gmail.com>"]
 readme = "README.md"
@@ -123,6 +127,7 @@ mkdocs = "^1.6.0"
 mkdocs-material = "^9.5.26"
 mkdocstrings = {version = "^0.25.1", extras = ["python"]}
 mkdocs-autorefs = "^0.5.0"
+rich = "13.9.4"
 
 [tool.poetry.urls]
 "Homepage" = "https://github.com/v-pikulev/hario"
